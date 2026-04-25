@@ -8,135 +8,220 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: '標楷體', 'DFKai-SB', serif;
-      background: #2d5a1b; min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 25% 15%, rgba(80,150,40,.4) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 85%, rgba(50,100,15,.4) 0%, transparent 55%),
+        linear-gradient(160deg, #1a3a08 0%, #2d5a1b 45%, #173a08 100%);
+      min-height: 100vh;
       display: flex; flex-direction: column; align-items: center;
       padding: 20px; color: white;
     }
-    h1 { font-size: 2rem; margin-bottom: 16px; text-shadow: 2px 2px 4px rgba(0,0,0,.5); }
+
+    /* ── 標題 ── */
+    h1 {
+      font-size: 2.2rem; margin-bottom: 20px; letter-spacing: 6px;
+      background: linear-gradient(180deg, #fff8dc 0%, #ffd700 50%, #c8930a 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      filter: drop-shadow(0 2px 8px rgba(200,147,10,.7));
+    }
+
+    /* ── 卡片 ── */
     .card {
-      background: rgba(0,0,0,.35); border-radius: 12px; padding: 24px 32px;
+      background: rgba(0,0,0,.5); border: 1px solid rgba(255,215,0,.22);
+      border-radius: 16px; padding: 24px 32px;
       width: 100%; max-width: 480px; margin-bottom: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
     }
-    .card h2 { font-size: 1.2rem; margin-bottom: 16px; color: #ffd700; }
+    .card h2 {
+      font-size: 1.15rem; margin-bottom: 16px; color: #ffd700;
+      letter-spacing: 2px; display: flex; align-items: center; gap: 8px;
+    }
+    .card h2::before { content: '◈'; font-size: .85rem; opacity: .65; }
+
+    /* ── 按鈕 ── */
     .btn {
-      background: #ffd700; color: #333; border: none; padding: 11px 28px;
-      font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
-      transition: background .2s, transform .1s; margin: 4px;
+      background: linear-gradient(180deg, #ffe566 0%, #ffd700 55%, #c8930a 100%);
+      color: #1a0a00; border: none; padding: 11px 28px;
+      font-size: 1rem; border-radius: 10px; cursor: pointer; font-weight: bold;
+      transition: all .18s; margin: 4px;
+      box-shadow: 0 3px 8px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.4);
+      font-family: inherit;
     }
-    .btn:hover:not(:disabled) { background: #ffe96e; transform: translateY(-2px); }
-    .btn:disabled { background: #555; color: #888; cursor: not-allowed; }
-    .btn.secondary { background: #5a8a5a; color: white; }
-    .btn.secondary:hover:not(:disabled) { background: #6aaa6a; }
-    .btn.eat { background: #e05c00; color: white; }
-    .btn.eat:hover:not(:disabled) { background: #ff7020; }
+    .btn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #fff099 0%, #ffe566 55%, #d4a010 100%);
+      transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.4);
+    }
+    .btn:active:not(:disabled) { transform: translateY(0); }
+    .btn:disabled { background: linear-gradient(180deg,#555,#444); color: #777; cursor: not-allowed; box-shadow: none; }
+    .btn.secondary {
+      background: linear-gradient(180deg, #5a9a5a 0%, #3d7a3d 100%);
+      color: white; border: 1px solid rgba(255,255,255,.18);
+    }
+    .btn.secondary:hover:not(:disabled) { background: linear-gradient(180deg,#6aaa6a,#4d8a4d); }
+    .btn.eat {
+      background: linear-gradient(180deg, #ff8020 0%, #cc4400 100%);
+      color: white; border: 1px solid rgba(255,255,255,.18);
+    }
+    .btn.eat:hover:not(:disabled) { background: linear-gradient(180deg,#ff9030,#dd5500); }
+
+    /* ── Input ── */
     input[type=text] {
-      width: 100%; padding: 10px 14px; border-radius: 8px;
-      border: 2px solid #666; background: rgba(255,255,255,.1); color: white;
-      font-size: 1rem; margin-bottom: 10px; font-family: inherit;
+      width: 100%; padding: 10px 14px; border-radius: 10px;
+      border: 2px solid rgba(255,215,0,.28); background: rgba(255,255,255,.07);
+      color: white; font-size: 1rem; margin-bottom: 10px; font-family: inherit;
+      transition: border-color .2s, background .2s;
     }
-    input[type=text]::placeholder { color: #999; }
-    input[type=text]:focus { outline: none; border-color: #ffd700; }
+    input[type=text]::placeholder { color: #666; }
+    input[type=text]:focus { outline: none; border-color: #ffd700; background: rgba(255,215,0,.05); }
     .error-msg { color: #ff7070; font-size: .9rem; margin-top: 8px; min-height: 1.3rem; }
-    .divider { border: none; border-top: 1px solid rgba(255,255,255,.15); margin: 18px 0; }
-    /* Lobby */
+    .divider {
+      border: none; margin: 18px 0; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,215,0,.35), transparent);
+    }
+
+    /* ── 大廳 ── */
     #lobby-screen  { display: none; flex-direction: column; align-items: center; width: 100%; }
-    /* Waiting */
+
+    /* ── 等待室 ── */
     #waiting-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
     .room-code-box { text-align: center; margin-bottom: 12px; }
-    .room-code-box .label { font-size: .9rem; color: #aaa; }
+    .room-code-box .label { font-size: .88rem; color: #aaa; margin-bottom: 6px; }
     .room-code-box .code {
-      font-size: 3rem; font-weight: bold; color: #ffd700;
-      letter-spacing: 8px; text-shadow: 0 0 20px rgba(255,215,0,.4);
+      font-size: 3.6rem; font-weight: bold; letter-spacing: 14px;
+      background: linear-gradient(180deg,#fff8dc,#ffd700,#c8930a);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      filter: drop-shadow(0 2px 12px rgba(200,147,10,.85));
     }
-    .copy-hint { font-size: .75rem; color: #888; margin-top: 4px; cursor: pointer; }
+    .copy-hint { font-size: .75rem; color: #777; margin-top: 6px; cursor: pointer; transition: color .2s; }
     .copy-hint:hover { color: #ffd700; }
+
     .player-list { list-style: none; padding: 0; }
     .player-list li {
-      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.1);
+      padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.07);
       display: flex; align-items: center; gap: 10px; font-size: 1rem;
     }
     .player-list li:last-child { border-bottom: none; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .dot.online { background: #4ade80; }
+
+    /* 玩家頭像 */
+    .player-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .95rem; font-weight: bold; color: #1a1a1a;
+      box-shadow: 0 2px 8px rgba(0,0,0,.45);
+    }
+    .avatar-0 { background: linear-gradient(135deg,#ffe566,#ffd700); }
+    .avatar-1 { background: linear-gradient(135deg,#6aee90,#4ade80); }
+    .avatar-2 { background: linear-gradient(135deg,#f87fb0,#f472b6); }
+    .avatar-3 { background: linear-gradient(135deg,#60c8f8,#38bdf8); }
+
+    .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot.online  { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
     .dot.offline { background: #555; }
-    .host-badge { background: #ffd700; color: #333; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
-    .me-badge   { background: #4ade80; color: #1a3a1a; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
-    .offline-badge { background: #555; color: #aaa; font-size: .65rem; padding: 1px 6px; border-radius: 10px; }
+    .host-badge  { background: linear-gradient(135deg,#ffd700,#c8930a); color: #1a0a00; font-size: .63rem; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
+    .me-badge    { background: linear-gradient(135deg,#4ade80,#1a7a3a); color: #fff; font-size: .63rem; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
+    .offline-badge{ background: #555; color: #aaa; font-size: .63rem; padding: 2px 7px; border-radius: 10px; }
+    .dealer-badge { background: linear-gradient(135deg,#ffd700,#c8930a); color: #1a0a00; font-size: .63rem; padding: 2px 7px; border-radius: 10px; font-weight: bold; }
     .wait-hint { color: #888; font-size: .85rem; margin-top: 10px; text-align: center; }
-    /* Game */
+
+    /* ── 遊戲 ── */
     #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
     .game-info {
-      background: rgba(0,0,0,.3); border-radius: 10px; padding: 10px 20px;
+      background: rgba(0,0,0,.4); border: 1px solid rgba(255,215,0,.18);
+      border-radius: 12px; padding: 12px 24px;
       margin-bottom: 16px; text-align: center; width: 100%; max-width: 840px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
     }
     #turn-info { font-size: 1.1rem; color: #ffd700; font-weight: bold; }
-    #deck-count { color: #aaa; font-size: .9rem; margin-top: 4px; }
-    .players-area {
-      display: flex; flex-direction: column; gap: 10px;
-      width: 100%; max-width: 840px; margin-bottom: 16px;
-    }
-    /* 其他玩家列 */
+    #deck-count { color: #888; font-size: .88rem; margin-top: 4px; }
+
+    /* ── 玩家面板 ── */
     .others-row { display: flex; gap: 8px; width: 100%; }
     .player-panel {
-      background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px;
-      border: 2px solid transparent; transition: border-color .3s, background .3s;
+      background: rgba(0,0,0,.32); border: 2px solid transparent;
+      border-radius: 12px; padding: 12px;
+      transition: border-color .3s, background .3s, box-shadow .3s;
     }
     .player-panel.compact { flex: 1; min-width: 0; }
-    .player-panel.active   { border-color: #ffd700; background: rgba(255,215,0,.08); animation: active-border-pulse 1.5s ease-in-out infinite; }
-    .player-panel.me-panel {
-      border-color: #4ade80; width: 100%;
-      padding: 16px 20px; background: rgba(0,80,0,.25);
+    .player-panel.active {
+      border-color: #ffd700; background: rgba(255,215,0,.06);
+      box-shadow: 0 0 22px rgba(255,215,0,.22);
+      animation: active-border-pulse 1.5s ease-in-out infinite;
     }
-    .player-panel.me-panel.active { border-color: #ffd700; background: rgba(255,215,0,.12); animation: active-border-pulse 1.5s ease-in-out infinite; }
+    .player-panel.me-panel {
+      border-color: #4ade80; width: 100%; padding: 18px 22px;
+      background: rgba(0,55,10,.28); box-shadow: 0 4px 20px rgba(0,0,0,.28);
+    }
+    .player-panel.me-panel.active {
+      border-color: #ffd700; background: rgba(255,215,0,.08);
+      box-shadow: 0 0 32px rgba(255,215,0,.28), 0 4px 20px rgba(0,0,0,.28);
+      animation: active-border-pulse 1.5s ease-in-out infinite;
+    }
     .player-name {
-      font-size: .95rem; margin-bottom: 10px;
+      font-size: .95rem; margin-bottom: 12px;
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .dealer-badge { background: #ffd700; color: #333; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
+
+    /* ── 棋子 ── */
     .hand { display: flex; flex-wrap: wrap; gap: 6px; }
     .hand.large { gap: 10px; }
     .piece {
-      width: 50px; height: 50px; border-radius: 50%;
+      width: 52px; height: 52px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.15rem; font-weight: bold; border: 3px solid;
-      transition: transform .2s, box-shadow .2s; user-select: none;
+      font-size: 1.2rem; font-weight: bold; border: none;
+      transition: transform .18s, box-shadow .18s;
+      user-select: none; position: relative;
     }
-    /* 自己手牌放大版 */
-    .piece.large {
-      width: 80px; height: 80px; font-size: 2rem; border-width: 4px;
+    .piece.large { width: 80px; height: 80px; font-size: 2rem; border-radius: 16px; }
+    .piece.red {
+      background: linear-gradient(160deg, #e83030 0%, #aa0000 55%, #800000 100%);
+      color: #fff;
+      box-shadow: 0 4px 10px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,130,130,.5), inset 0 -2px 0 rgba(0,0,0,.3);
     }
-    .piece.red    { background: #cc0000; color: #fff; border-color: #8b0000; }
-    .piece.black  { background: #3a3a3a; color: #ddd; border-color: #111; }
-    .piece.hidden { background: #5c3d1a; color: #5c3d1a; border-color: #3d2710; }
-    .piece.selectable:hover { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(0,0,0,.6); cursor: pointer; }
-    .piece.drawn  { animation: pop .4s ease-out; box-shadow: 0 0 14px #ffd700; }
-    /* 切換顯示按鈕 */
-    .toggle-others {
-      background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.15);
-      color: #aaa; border-radius: 6px; padding: 4px 14px;
-      font-size: .8rem; cursor: pointer; align-self: flex-end;
-      transition: color .2s;
+    .piece.black {
+      background: linear-gradient(160deg, #585858 0%, #2a2a2a 55%, #0e0e0e 100%);
+      color: #e0e0e0;
+      box-shadow: 0 4px 10px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.14), inset 0 -2px 0 rgba(0,0,0,.4);
     }
-    .toggle-others:hover { color: #ffd700; }
+    .piece.hidden {
+      background: linear-gradient(160deg, #7a5225 0%, #5c3d1a 55%, #3d2710 100%);
+      color: transparent;
+      box-shadow: 0 4px 10px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,200,100,.18), inset 0 -2px 0 rgba(0,0,0,.3);
+    }
+    .piece.selectable:hover {
+      transform: translateY(-10px) scale(1.06);
+      box-shadow: 0 14px 30px rgba(0,0,0,.7), 0 0 0 2px #ffd700;
+      cursor: pointer; z-index: 1;
+    }
+    .piece.drawn  { animation: pop .4s ease-out; box-shadow: 0 0 0 3px #ffd700, 0 6px 20px rgba(255,215,0,.5) !important; }
+    .piece.eatable{ animation: glow 1s ease-in-out infinite alternate; }
+    .piece.latest { box-shadow: 0 0 0 2px #ffd700, 0 0 12px rgba(255,215,0,.5) !important; }
+    .piece.small  { width: 46px; height: 46px; font-size: 1.1rem; border-radius: 10px; }
+
     @keyframes pop {
-      0%   { transform: scale(.6); opacity: .4; }
-      70%  { transform: scale(1.15); }
+      0%   { transform: scale(.5) translateY(-20px); opacity: .3; }
+      65%  { transform: scale(1.12) translateY(0); }
       100% { transform: scale(1); opacity: 1; }
     }
-    .piece.eatable { animation: glow 1s ease-in-out infinite alternate; }
     @keyframes glow {
-      from { box-shadow: 0 0 8px #ffd700; }
-      to   { box-shadow: 0 0 20px #ffd700, 0 0 36px #ffd70066; }
+      from { box-shadow: 0 0 8px #ffd700, inset 0 1px 0 rgba(255,255,255,.3); }
+      to   { box-shadow: 0 0 26px #ffd700, 0 0 44px rgba(255,215,0,.5), inset 0 1px 0 rgba(255,255,255,.3); }
     }
-    /* ① 棄牌最後一張高亮 */
-    .piece.latest { border-color: #ffd700 !important; box-shadow: 0 0 8px rgba(255,215,0,.45); }
-    /* ② 等待動畫 – 當前玩家 panel 脈衝 */
     @keyframes active-border-pulse {
       0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.5); }
-      50%     { box-shadow: 0 0 0 7px rgba(255,215,0,0); }
+      50%     { box-shadow: 0 0 0 8px rgba(255,215,0,0); }
     }
-    /* ② 等待動畫 – 跳動小點 */
-    .dot-anim { display:inline-flex; gap:2px; vertical-align:middle; margin-left:6px; }
+
+    /* ── 切換按鈕 ── */
+    .toggle-others {
+      background: rgba(0,0,0,.3); border: 1px solid rgba(255,215,0,.2);
+      color: #aaa; border-radius: 8px; padding: 6px 18px;
+      font-size: .82rem; cursor: pointer; width: 100%; text-align: center;
+      transition: color .2s, border-color .2s, background .2s; font-family: inherit;
+    }
+    .toggle-others:hover { color: #ffd700; border-color: rgba(255,215,0,.5); background: rgba(255,215,0,.05); }
+
+    /* ── 跳動小點 ── */
+    .dot-anim { display:inline-flex; gap:3px; vertical-align:middle; margin-left:6px; }
     .dot-anim span {
       display:inline-block; width:5px; height:5px; border-radius:50%;
       background:#ffd700; animation:dot-bounce 1.4s ease-in-out infinite;
@@ -147,76 +232,158 @@
       0%,80%,100% { transform:translateY(0); opacity:.3; }
       40%         { transform:translateY(-5px); opacity:1; }
     }
+
+    /* ── 操作區 ── */
     .controls {
-      background: rgba(0,0,0,.3); border-radius: 10px;
-      padding: 14px 24px; margin-bottom: 16px; text-align: center;
-      width: 100%; max-width: 840px;
+      background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; padding: 14px 24px; margin-bottom: 16px;
+      text-align: center; width: 100%; max-width: 840px;
     }
     .status-msg { font-size: 1rem; margin-top: 8px; min-height: 1.4rem; color: #ffd700; font-weight: bold; }
-    .eat-controls { margin-top: 8px; }
-    .win-overlay { display: none; width: 100%; max-width: 840px; margin-bottom: 12px; }
-    .win-overlay.show { display: block; }
-    .win-box {
-      background: #fff8e8; color: #333; border-radius: 12px;
-      padding: 16px 24px; text-align: center; border: 3px solid #ffd700;
-      display: flex; align-items: center; justify-content: center;
-      gap: 16px; flex-wrap: wrap;
-    }
-    .win-box h2 { font-size: 1.3rem; color: #cc0000; margin: 0; }
-    .win-box p  { font-size: .95rem; color: #555; margin: 0; }
+    .eat-controls { margin-top: 10px; display: flex; gap: 8px; justify-content: center; }
+
+    /* ── 棄牌區 ── */
     .discard-area {
-      background: rgba(0,0,0,.3); border-radius: 10px; padding: 14px 18px;
+      background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.07);
+      border-radius: 12px; padding: 16px 18px;
       margin-bottom: 16px; width: 100%; max-width: 840px;
     }
-    .discard-area h3 { font-size: .9rem; color: #aaa; margin-bottom: 12px; letter-spacing: 1px; }
-    .discard-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .discard-row  { display: flex; flex-direction: column; gap: 6px; }
-    .discard-label { font-size: .95rem; color: #ccc; font-weight: bold; }
-    .discard-pieces { display: flex; flex-wrap: wrap; gap: 6px; }
-    .piece.small { width: 50px; height: 50px; font-size: 1.2rem; border-width: 2px; }
-    .log {
-      background: rgba(0,0,0,.4); border-radius: 8px; padding: 10px 14px;
-      max-height: 130px; overflow-y: auto; width: 100%; max-width: 840px;
-      font-size: .82rem; color: #bbb;
+    .discard-area > h3 {
+      font-size: .85rem; color: #777; margin-bottom: 14px; letter-spacing: 2px;
+      display: flex; align-items: center; gap: 10px;
     }
-    .log p { margin: 2px 0; line-height: 1.4; }
-    .loading { color: #aaa; font-size: 1rem; margin-top: 40px; }
-    /* ③ 手機版排版 */
+    .discard-area > h3::before,
+    .discard-area > h3::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.1); }
+    .discard-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .discard-row  {
+      background: rgba(0,0,0,.2); border-radius: 10px;
+      padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .discard-label {
+      font-size: .8rem; font-weight: bold; padding: 3px 10px;
+      border-radius: 6px; display: inline-block; align-self: flex-start;
+    }
+    .discard-label-0 { background: rgba(255,215,0,.18); color: #ffd700; border: 1px solid rgba(255,215,0,.28); }
+    .discard-label-1 { background: rgba(74,222,128,.14); color: #4ade80; border: 1px solid rgba(74,222,128,.24); }
+    .discard-label-2 { background: rgba(244,114,182,.14); color: #f472b6; border: 1px solid rgba(244,114,182,.24); }
+    .discard-label-3 { background: rgba(56,189,248,.14); color: #38bdf8; border: 1px solid rgba(56,189,248,.24); }
+    .discard-pieces { display: flex; flex-wrap: wrap; gap: 5px; }
+
+    /* ── 紀錄 ── */
+    .log {
+      background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.06);
+      border-radius: 10px; padding: 10px 14px;
+      max-height: 130px; overflow-y: auto; width: 100%; max-width: 840px;
+      font-size: .82rem; color: #999;
+      scrollbar-width: thin; scrollbar-color: rgba(255,215,0,.25) transparent;
+    }
+    .log::-webkit-scrollbar { width: 4px; }
+    .log::-webkit-scrollbar-thumb { background: rgba(255,215,0,.25); border-radius: 2px; }
+    .log p { margin: 2px 0; line-height: 1.5; border-bottom: 1px solid rgba(255,255,255,.04); padding-bottom: 2px; }
+    .log p:last-child { border-bottom: none; }
+    .loading { color: #888; font-size: 1rem; margin-top: 40px; }
+
+    /* ── 胡牌 Modal ── */
+    .win-modal {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.82); backdrop-filter: blur(6px);
+      z-index: 200; align-items: center; justify-content: center;
+    }
+    .win-modal.show { display: flex; animation: modal-fade-in .3s ease; }
+    @keyframes modal-fade-in { from{opacity:0} to{opacity:1} }
+
+    .win-modal-box {
+      background: linear-gradient(160deg,#2a0800 0%,#4a1600 45%,#2a0800 100%);
+      border: 2px solid #ffd700; border-radius: 24px;
+      padding: 44px 52px; text-align: center;
+      max-width: 420px; width: 88%;
+      position: relative; overflow: hidden;
+      animation: modal-scale-in .4s cubic-bezier(.175,.885,.32,1.275);
+      box-shadow: 0 0 80px rgba(255,215,0,.32), 0 30px 80px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08);
+    }
+    .win-modal-box::before {
+      content:''; position:absolute; inset:0;
+      background:radial-gradient(ellipse at 50% 0%,rgba(255,215,0,.14) 0%,transparent 65%);
+      pointer-events:none;
+    }
+    @keyframes modal-scale-in {
+      from { transform:scale(.65); opacity:0; }
+      to   { transform:scale(1);   opacity:1; }
+    }
+
+    .win-crown { font-size: 3.5rem; margin-bottom: 8px; display: block; animation: crown-bounce 1s ease-out; }
+    @keyframes crown-bounce {
+      0%   { transform:translateY(-30px) scale(.5); opacity:0; }
+      60%  { transform:translateY(8px) scale(1.1); }
+      80%  { transform:translateY(-4px) scale(.97); }
+      100% { transform:translateY(0) scale(1); opacity:1; }
+    }
+
+    .win-title {
+      font-size: 2rem; margin-bottom: 12px;
+      background: linear-gradient(180deg,#fff8dc,#ffd700,#c8930a);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      animation: gold-shimmer 2s ease-in-out infinite alternate;
+    }
+    @keyframes gold-shimmer {
+      from { filter:drop-shadow(0 2px 4px rgba(200,147,10,.5)); }
+      to   { filter:drop-shadow(0 2px 18px rgba(255,215,0,.95)); }
+    }
+
+    .win-pattern {
+      font-size: 1rem; color: #ddd;
+      background: rgba(0,0,0,.3); border-radius: 8px;
+      padding: 8px 16px; margin-bottom: 20px;
+      border: 1px solid rgba(255,215,0,.2);
+    }
+
+    .confetti-piece {
+      position: absolute; border-radius: 2px;
+      animation: confetti-fall linear forwards; pointer-events: none;
+    }
+    @keyframes confetti-fall {
+      0%   { transform:translateY(-10px) rotate(0deg); opacity:1; }
+      100% { transform:translateY(360px) rotate(720deg); opacity:0; }
+    }
+
+    /* ── 手機版 ── */
     @media (max-width: 600px) {
       body { padding: 10px; }
-      h1 { font-size: 1.4rem; margin-bottom: 10px; }
+      h1 { font-size: 1.5rem; margin-bottom: 12px; letter-spacing: 3px; }
       .card { padding: 16px 14px; max-width: 100%; }
-      .piece.large { width: 60px; height: 60px; font-size: 1.5rem; border-width: 3px; }
-      .piece, .piece.small { width: 40px; height: 40px; font-size: .95rem; border-width: 2px; }
+      .piece.large { width: 64px; height: 64px; font-size: 1.6rem; border-radius: 12px; }
+      .piece, .piece.small { width: 40px; height: 40px; font-size: .92rem; border-radius: 8px; }
       .hand.large { gap: 7px; }
       .hand { gap: 5px; }
-      .game-info { padding: 8px 12px; }
+      .game-info { padding: 8px 14px; }
       #turn-info { font-size: .9rem; }
-      #deck-count { font-size: .8rem; }
       .controls { padding: 10px 12px; }
       .btn { padding: 9px 16px; font-size: .88rem; margin: 3px; }
-      .discard-area { padding: 10px 10px; }
-      .discard-rows { grid-template-columns: 1fr; gap: 10px; }
+      .discard-area { padding: 12px 10px; }
+      .discard-rows { grid-template-columns: 1fr; gap: 8px; }
       .log { font-size: .76rem; max-height: 100px; }
-      .player-panel.me-panel { padding: 12px 12px; }
+      .player-panel.me-panel { padding: 12px; }
       .player-name { font-size: .85rem; }
+      .win-modal-box { padding: 32px 24px; }
+      .win-crown { font-size: 2.6rem; }
+      .win-title { font-size: 1.6rem; }
     }
   </style>
 </head>
 <body>
-  <h1>♟ 象棋麻將</h1>
+  <h1>◈ 象棋麻將 ◈</h1>
   <div class="loading" id="loading-msg">連線中…</div>
 
-  <!-- ── 大廳 ─────────────────────────────────────── -->
+  <!-- ── 大廳 ── -->
   <div id="lobby-screen">
     <div class="card">
       <h2>進入遊戲</h2>
-      <label style="font-size:.9rem;color:#ccc">你的名字</label>
+      <label style="font-size:.85rem;color:#aaa;display:block;margin-bottom:4px">你的名字</label>
       <input type="text" id="player-name" placeholder="輸入名字" maxlength="10">
-      <label style="font-size:.9rem;color:#ccc;display:block;margin-top:4px">房間代碼（加入時填）</label>
+      <label style="font-size:.85rem;color:#aaa;display:block;margin-top:4px">房間代碼（加入時填）</label>
       <input type="text" id="room-code-input" placeholder="留空則建立新房間" maxlength="4"
              inputmode="numeric" pattern="[0-9]*" style="letter-spacing:4px;margin-top:6px">
-      <div style="display:flex;gap:8px;margin-top:12px">
+      <div style="display:flex;gap:8px;margin-top:14px">
         <button class="btn" style="flex:1" id="create-btn">建立房間</button>
         <button class="btn secondary" style="flex:1" id="join-btn">加入房間</button>
       </div>
@@ -224,7 +391,7 @@
     </div>
   </div>
 
-  <!-- ── 等待室 ──────────────────────────────────── -->
+  <!-- ── 等待室 ── -->
   <div id="waiting-screen">
     <div class="card">
       <div class="room-code-box">
@@ -236,14 +403,24 @@
       <h2>玩家列表</h2>
       <ul class="player-list" id="player-list-waiting"></ul>
       <div class="wait-hint" id="wait-hint">等待玩家加入…</div>
-      <div style="text-align:center;margin-top:16px">
+      <div style="text-align:center;margin-top:18px">
         <button class="btn" id="start-btn" disabled>開始遊戲</button>
       </div>
       <div class="error-msg" id="waiting-error"></div>
     </div>
   </div>
 
-  <!-- ── 遊戲 ───────────────────────────────────── -->
+  <!-- ── 胡牌 Modal（全螢幕）── -->
+  <div class="win-modal" id="win-modal">
+    <div class="win-modal-box">
+      <span class="win-crown" id="win-crown">👑</span>
+      <h2 class="win-title" id="win-title">胡牌！</h2>
+      <p class="win-pattern" id="win-msg"></p>
+      <button class="btn" id="new-game-btn" style="display:none">再來一局</button>
+    </div>
+  </div>
+
+  <!-- ── 遊戲 ── -->
   <div id="game-screen">
     <div class="game-info">
       <div id="turn-info">—</div>
@@ -263,15 +440,6 @@
       <div class="status-msg" id="status-msg"></div>
     </div>
 
-    <!-- 胡牌橫幅 -->
-    <div class="win-overlay" id="win-overlay">
-      <div class="win-box">
-        <h2>胡牌！</h2>
-        <p id="win-msg"></p>
-        <button class="btn" id="new-game-btn" style="display:none">再來一局</button>
-      </div>
-    </div>
-
     <!-- 2. 棄牌區 -->
     <div class="discard-area">
       <h3>棄牌區</h3>
@@ -280,7 +448,7 @@
 
     <!-- 3. 其他玩家（預設隱藏） -->
     <div style="width:100%;max-width:840px;margin-bottom:16px">
-      <button class="toggle-others" id="toggle-others-btn" style="align-self:unset;width:100%;text-align:center">▼ 顯示其他玩家</button>
+      <button class="toggle-others" id="toggle-others-btn">▼ 顯示其他玩家</button>
       <div class="others-row" id="others-area" style="display:none;margin-top:8px"></div>
     </div>
 
@@ -293,26 +461,21 @@
     import { getDatabase, ref, get, set, update, onValue, off, onDisconnect }
                              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
-    // ══════════════════════════════════════════════════════════════════
-    //  ★ 填入你的 Firebase 專案設定（Firebase Console → 專案設定 → 你的應用程式）
-    // ══════════════════════════════════════════════════════════════════
-const firebaseConfig = {
-  apiKey: "AIzaSyAa6yIrYAJSN2_FA8LtVwPhI75rHFmzQOo",
-  authDomain: "chess-52714.firebaseapp.com",
-  databaseURL: "https://chess-52714-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "chess-52714",
-  storageBucket: "chess-52714.firebasestorage.app",
-  messagingSenderId: "652558875012",
-  appId: "1:652558875012:web:fb8f11e7b51c3ce4ac85d1",
-  measurementId: "G-5475BP18MB"
-};
-
-    // ══════════════════════════════════════════════════════════════════
+    const firebaseConfig = {
+      apiKey: "AIzaSyAa6yIrYAJSN2_FA8LtVwPhI75rHFmzQOo",
+      authDomain: "chess-52714.firebaseapp.com",
+      databaseURL: "https://chess-52714-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "chess-52714",
+      storageBucket: "chess-52714.firebasestorage.app",
+      messagingSenderId: "652558875012",
+      appId: "1:652558875012:web:fb8f11e7b51c3ce4ac85d1",
+      measurementId: "G-5475BP18MB"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db  = getDatabase(app);
 
-    // ── 遊戲邏輯 ────────────────────────────────────────────────────
+    // ── 遊戲邏輯 ──
 
     function createDeck() {
       const pieces = []; let id = 0;
@@ -371,7 +534,7 @@ const firebaseConfig = {
       return{win:false};
     }
 
-    // ── 工具函式 ────────────────────────────────────────────────────
+    // ── 工具 ──
 
     function toArr(v) {
       if(!v) return [];
@@ -389,7 +552,7 @@ const firebaseConfig = {
       }
     }
 
-    // ── 狀態 ────────────────────────────────────────────────────────
+    // ── 狀態 ──
 
     let myUid    = null;
     let myIndex  = -1;
@@ -397,8 +560,7 @@ const firebaseConfig = {
     let isHost   = false;
     let roomData = null;
     let unsubRoom = null;
-
-    // ── 初始化（不需要登入，用 localStorage 產生持久 UID）──────────
+    let confettiLaunched = false;
 
     myUid = localStorage.getItem('chess_mahjong_uid');
     if (!myUid) {
@@ -408,7 +570,7 @@ const firebaseConfig = {
     document.getElementById('loading-msg').style.display = 'none';
     showScreen('lobby');
 
-    // ── 畫面切換 ────────────────────────────────────────────────────
+    // ── 畫面切換 ──
 
     function showScreen(name) {
       document.getElementById('lobby-screen').style.display   = name==='lobby'   ? 'flex' : 'none';
@@ -416,7 +578,7 @@ const firebaseConfig = {
       document.getElementById('game-screen').style.display    = name==='game'    ? 'flex' : 'none';
     }
 
-    // ── 大廳操作 ────────────────────────────────────────────────────
+    // ── 大廳 ──
 
     async function createRoom() {
       const name = document.getElementById('player-name').value.trim() || '玩家';
@@ -475,7 +637,7 @@ const firebaseConfig = {
     function showLobbyErr(msg)   { document.getElementById('lobby-error').textContent   = msg; }
     function showWaitingErr(msg) { document.getElementById('waiting-error').textContent = msg; }
 
-    // ── Firebase 訂閱 ────────────────────────────────────────────────
+    // ── Firebase 訂閱 ──
 
     function subscribeToRoom(roomId) {
       if (unsubRoom) { off(ref(db, `rooms/${roomId}`)); unsubRoom = null; }
@@ -483,22 +645,15 @@ const firebaseConfig = {
       unsubRoom = onValue(roomRef, snap => {
         if (!snap.exists()) return;
         roomData = snap.val();
-
-        // 重新確認 myIndex（防止重連後對應錯誤）
         const players = toArr(roomData.players);
         const found = players.findIndex(p => p.uid === myUid);
         if (found !== -1) myIndex = found;
-
         if (roomData.phase === 'waiting') {
-          showScreen('waiting');
-          renderWaiting();
+          showScreen('waiting'); renderWaiting();
         } else {
-          showScreen('game');
-          renderGame();
+          showScreen('game'); renderGame();
         }
       });
-
-      // 在線狀態
       onValue(ref(db, '.info/connected'), snap => {
         if (snap.val() && myIndex !== -1) {
           const pRef = ref(db, `rooms/${roomId}/players/${myIndex}/online`);
@@ -508,7 +663,7 @@ const firebaseConfig = {
       });
     }
 
-    // ── 遊戲操作 ────────────────────────────────────────────────────
+    // ── 遊戲操作 ──
 
     async function startGame() {
       if (!isHost) return;
@@ -542,6 +697,7 @@ const firebaseConfig = {
       upd[`rooms/${myRoomId}/winner`]            = null;
       upd[`rooms/${myRoomId}/draw`]              = null;
       upd[`rooms/${myRoomId}/log`] = [`[${timeStr()}] 遊戲開始！「${players[dealerIdx].name}」為莊家，請摸牌。`];
+      confettiLaunched = false;
       await update(ref(db), upd);
     }
 
@@ -601,7 +757,6 @@ const firebaseConfig = {
       upd[`rooms/${myRoomId}/discards/${myIndex}`]          = myDiscards;
       upd[`rooms/${myRoomId}/drawnPieceId`]                 = null;
 
-      // 放砲檢查
       let winner = null;
       for (let i = 1; i < n; i++) {
         const ci    = (myIndex + i) % n;
@@ -671,7 +826,30 @@ const firebaseConfig = {
       });
     }
 
-    // ── 渲染 ────────────────────────────────────────────────────────
+    // ── 彩色紙片 ──
+
+    function launchConfetti() {
+      const box = document.querySelector('.win-modal-box');
+      // 移除舊的
+      box.querySelectorAll('.confetti-piece').forEach(el => el.remove());
+      const colors = ['#ffd700','#ff6b6b','#4ade80','#60a5fa','#f472b6','#fb923c','#fff'];
+      for (let i = 0; i < 45; i++) {
+        const p = document.createElement('div');
+        p.className = 'confetti-piece';
+        const size = 4 + Math.random() * 7;
+        p.style.cssText = `
+          left:${Math.random()*100}%;top:0;
+          width:${size}px;height:${size}px;
+          background:${colors[Math.floor(Math.random()*colors.length)]};
+          border-radius:${Math.random()>.5?'50%':'2px'};
+          animation-delay:${Math.random()*.9}s;
+          animation-duration:${.9+Math.random()*.7}s;
+        `;
+        box.appendChild(p);
+      }
+    }
+
+    // ── 渲染 ──
 
     function renderWaiting() {
       const players = toArr(roomData.players);
@@ -679,10 +857,12 @@ const firebaseConfig = {
       ul.innerHTML = '';
       players.forEach((p, i) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span class="dot ${p.online?'online':'offline'}"></span>
-          ${p.name}
-          ${i===0?' <span class="host-badge">房主</span>':''}
-          ${p.uid===myUid?' <span class="me-badge">你</span>':''}`;
+        li.innerHTML = `
+          <div class="player-avatar avatar-${i}">${p.name.charAt(0)}</div>
+          <span>${p.name}</span>
+          ${i===0?'<span class="host-badge">房主</span>':''}
+          ${p.uid===myUid?'<span class="me-badge">你</span>':''}
+          <span class="dot ${p.online?'online':'offline'}" style="margin-left:auto"></span>`;
         ul.appendChild(li);
       });
       document.getElementById('wait-hint').textContent =
@@ -705,22 +885,29 @@ const firebaseConfig = {
 
       document.getElementById('deck-count').textContent = `牌堆剩餘：${toArr(roomData.deck).length} 張`;
       document.getElementById('draw-btn').disabled = !(isMyTurn && phase==='draw');
-      document.getElementById('eat-controls').style.display = (isMyTurn && phase==='can-eat') ? 'block' : 'none';
+      document.getElementById('eat-controls').style.display = (isMyTurn && phase==='can-eat') ? 'flex' : 'none';
       document.getElementById('status-msg').textContent = (isMyTurn && phase==='discard') ? '點擊手牌打出一張' : '';
 
-      // 胡牌／和局橫幅
+      // 胡牌／平局 Modal
       if (roomData.winner) {
         const w = roomData.winner;
+        document.getElementById('win-crown').textContent = '👑';
+        document.getElementById('win-title').textContent = '胡牌！';
         document.getElementById('win-msg').textContent =
           w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
-        document.getElementById('win-overlay').classList.add('show');
+        document.getElementById('win-modal').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
+        if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
       } else if (roomData.draw) {
+        document.getElementById('win-crown').textContent = '🤝';
+        document.getElementById('win-title').textContent = '平局！';
         document.getElementById('win-msg').textContent = '牌堆已空，本局平局！';
-        document.getElementById('win-overlay').classList.add('show');
+        document.getElementById('win-modal').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
+        if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
       } else {
-        document.getElementById('win-overlay').classList.remove('show');
+        document.getElementById('win-modal').classList.remove('show');
+        confettiLaunched = false;
       }
 
       renderPlayers();
@@ -750,11 +937,9 @@ const firebaseConfig = {
         const isActive  = idx === roomData.currentPlayer;
         const canDiscard= isMe && isActive && roomData.phase === 'discard';
         const hand      = toArr(roomData.hands?.[idx] || []);
-
-        const panel = document.createElement('div');
+        const panel     = document.createElement('div');
 
         if (isMe) {
-          // ── 自己的手牌：全寬放大 ────────────────────────────
           panel.className = `player-panel me-panel${isActive ? ' active' : ''}`;
 
           const nameDiv = document.createElement('div');
@@ -777,7 +962,6 @@ const firebaseConfig = {
             handDiv.appendChild(el);
           });
 
-          // 結局時顯示手牌說明
           if (isIdle && hand.length > 0) {
             const hint = document.createElement('div');
             hint.style.cssText = 'margin-top:8px;font-size:.8rem;color:#aaa';
@@ -787,11 +971,9 @@ const firebaseConfig = {
           } else {
             panel.appendChild(handDiv);
           }
-
           myEl.appendChild(panel);
 
         } else {
-          // ── 其他玩家：緊湊小牌 ──────────────────────────────
           panel.className = `player-panel compact${isActive ? ' active' : ''}`;
 
           const nameDiv = document.createElement('div');
@@ -831,8 +1013,8 @@ const firebaseConfig = {
         row.className = 'discard-row';
 
         const label = document.createElement('span');
-        label.className = 'discard-label';
-        label.textContent = `${player.name}`;
+        label.className = `discard-label discard-label-${i}`;
+        label.textContent = player.name;
         row.appendChild(label);
 
         const piecesDiv = document.createElement('div');
@@ -841,7 +1023,7 @@ const firebaseConfig = {
         const pile = toArr(roomData.discards?.[i] || []);
         if (pile.length === 0) {
           const empty = document.createElement('span');
-          empty.style.cssText = 'color:#555;font-size:.9rem';
+          empty.style.cssText = 'color:#444;font-size:.88rem';
           empty.textContent = '尚無棄牌';
           piecesDiv.appendChild(empty);
         } else {
@@ -867,7 +1049,7 @@ const firebaseConfig = {
       if (atBot) logEl.scrollTop = logEl.scrollHeight;
     }
 
-    // ── 事件綁定 ────────────────────────────────────────────────────
+    // ── 事件綁定 ──
 
     document.getElementById('toggle-others-btn').onclick = toggleOthers;
     document.getElementById('create-btn').onclick  = createRoom;
