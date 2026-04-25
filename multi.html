@@ -128,11 +128,48 @@
     .game-info {
       background: rgba(0,0,0,.4); border: 1px solid rgba(255,215,0,.18);
       border-radius: 12px; padding: 12px 24px;
-      margin-bottom: 16px; text-align: center; width: 100%; max-width: 840px;
+      margin-bottom: 16px; width: 100%; max-width: 840px;
       box-shadow: 0 4px 16px rgba(0,0,0,.3);
+      display: flex; align-items: center; position: relative;
     }
+    .game-info-center { flex: 1; text-align: center; }
     #turn-info { font-size: 1.1rem; color: #ffd700; font-weight: bold; }
     #deck-count { color: #888; font-size: .88rem; margin-top: 4px; }
+    .score-btn {
+      background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.28);
+      color: #ffd700; border-radius: 8px; padding: 6px 12px;
+      cursor: pointer; font-size: .82rem; font-family: inherit;
+      transition: background .2s, border-color .2s; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .score-btn:hover { background: rgba(255,215,0,.22); border-color: rgba(255,215,0,.55); }
+    .score-popup {
+      position: absolute; right: 0; top: calc(100% + 8px);
+      background: rgba(8,18,4,.97); border: 1px solid rgba(255,215,0,.32);
+      border-radius: 12px; padding: 14px 18px; z-index: 20;
+      min-width: 190px;
+      box-shadow: 0 8px 28px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.05);
+      animation: popup-in .15s ease-out;
+    }
+    @keyframes popup-in {
+      from { transform: translateY(-6px) scale(.97); opacity: 0; }
+      to   { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .score-popup h4 {
+      font-size: .78rem; color: #666; letter-spacing: 2px;
+      margin-bottom: 10px; text-align: center;
+    }
+    .score-popup-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-size: .9rem;
+    }
+    .score-popup-row:last-child { border-bottom: none; }
+    .score-popup-name { flex: 1; }
+    .score-popup-val { font-weight: bold; font-size: 1rem; min-width: 38px; text-align: right; }
+    .score-popup-val.pos  { color: #4ade80; }
+    .score-popup-val.neg  { color: #f87171; }
+    .score-popup-val.zero { color: #666; }
     #deck-count .num {
       color: #ffd700; font-size: 1.15rem; font-weight: bold;
       text-shadow: 0 0 8px rgba(255,215,0,.6);
@@ -441,8 +478,15 @@
   <!-- ── 遊戲 ── -->
   <div id="game-screen">
     <div class="game-info">
-      <div id="turn-info">—</div>
-      <div id="deck-count">牌堆：32 張</div>
+      <div style="flex:1"></div>
+      <div class="game-info-center">
+        <div id="turn-info">—</div>
+        <div id="deck-count">牌堆：32 張</div>
+      </div>
+      <div style="flex:1;display:flex;justify-content:flex-end">
+        <button class="score-btn" id="score-btn">▸ 積分</button>
+      </div>
+      <div class="score-popup" id="score-popup" style="display:none"></div>
     </div>
 
     <!-- 1. 自己的手牌 -->
@@ -568,6 +612,33 @@
 
     function getWinTai(pattern, isZiMo) {
       return pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+    }
+
+    let scorePanelOpen = false;
+
+    function renderScorePopup() {
+      const popup = document.getElementById('score-popup');
+      if (!roomData || !scorePanelOpen) { popup.style.display = 'none'; return; }
+      const players = toArr(roomData.players);
+      const scores  = toArr(roomData.scores || []);
+      popup.innerHTML = `<h4>累積積分</h4>` + players.map((p, i) => {
+        const sc  = scores[i] ?? 0;
+        const cls = sc > 0 ? 'pos' : sc < 0 ? 'neg' : 'zero';
+        const str = sc > 0 ? `+${sc}` : String(sc);
+        return `<div class="score-popup-row">
+          <span class="player-avatar avatar-${i}" style="width:24px;height:24px;font-size:.7rem">${p.name.charAt(0)}</span>
+          <span class="score-popup-name">${p.name}${p.uid===myUid?' <span style="font-size:.7rem;color:#4ade80">你</span>':''}</span>
+          <span class="score-popup-val ${cls}">${str}台</span>
+        </div>`;
+      }).join('');
+      popup.style.display = 'block';
+    }
+
+    function toggleScorePanel() {
+      scorePanelOpen = !scorePanelOpen;
+      const btn = document.getElementById('score-btn');
+      btn.textContent = scorePanelOpen ? '▾ 積分' : '▸ 積分';
+      renderScorePopup();
     }
 
     // ── 工具 ──
@@ -998,6 +1069,7 @@
       renderPlayers();
       renderDiscards();
       renderLog();
+      renderScorePopup();
     }
 
     let showOthers = false;
@@ -1149,6 +1221,14 @@
     document.getElementById('draw-btn').onclick    = drawCard;
     document.getElementById('eat-btn').onclick     = eatCard;
     document.getElementById('new-game-btn').onclick= startGame;
+    document.getElementById('score-btn').onclick   = e => { e.stopPropagation(); toggleScorePanel(); };
+    document.addEventListener('click', e => {
+      if (scorePanelOpen && !document.getElementById('score-popup').contains(e.target)) {
+        scorePanelOpen = false;
+        document.getElementById('score-btn').textContent = '▸ 積分';
+        document.getElementById('score-popup').style.display = 'none';
+      }
+    });
 
     document.getElementById('display-room-code').onclick = () => {
       if (!myRoomId) return;
