@@ -283,57 +283,49 @@
     .log p:last-child { border-bottom: none; }
     .loading { color: #888; font-size: 1rem; margin-top: 40px; }
 
-    /* ── 胡牌 Modal ── */
-    .win-modal {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,.82); backdrop-filter: blur(6px);
-      z-index: 200; align-items: center; justify-content: center;
+    /* ── 胡牌橫幅 ── */
+    .win-overlay { display: none; width: 100%; max-width: 840px; margin-bottom: 16px; }
+    .win-overlay.show { display: block; animation: win-slide-in .4s cubic-bezier(.175,.885,.32,1.275); }
+    @keyframes win-slide-in {
+      from { transform: scale(.88) translateY(-8px); opacity: 0; }
+      to   { transform: scale(1)   translateY(0);    opacity: 1; }
     }
-    .win-modal.show { display: flex; animation: modal-fade-in .3s ease; }
-    @keyframes modal-fade-in { from{opacity:0} to{opacity:1} }
 
-    .win-modal-box {
-      background: linear-gradient(160deg,#2a0800 0%,#4a1600 45%,#2a0800 100%);
-      border: 2px solid #ffd700; border-radius: 24px;
-      padding: 44px 52px; text-align: center;
-      max-width: 420px; width: 88%;
+    .win-box {
+      background: linear-gradient(160deg, #2a0800 0%, #4a1600 45%, #2a0800 100%);
+      border: 2px solid #ffd700; border-radius: 16px;
+      padding: 22px 32px; text-align: center;
       position: relative; overflow: hidden;
-      animation: modal-scale-in .4s cubic-bezier(.175,.885,.32,1.275);
-      box-shadow: 0 0 80px rgba(255,215,0,.32), 0 30px 80px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08);
+      box-shadow: 0 0 40px rgba(255,215,0,.22), 0 8px 30px rgba(0,0,0,.55);
     }
-    .win-modal-box::before {
+    .win-box::before {
       content:''; position:absolute; inset:0;
-      background:radial-gradient(ellipse at 50% 0%,rgba(255,215,0,.14) 0%,transparent 65%);
-      pointer-events:none;
-    }
-    @keyframes modal-scale-in {
-      from { transform:scale(.65); opacity:0; }
-      to   { transform:scale(1);   opacity:1; }
+      background: radial-gradient(ellipse at 50% 0%, rgba(255,215,0,.12) 0%, transparent 65%);
+      pointer-events: none;
     }
 
-    .win-crown { font-size: 3.5rem; margin-bottom: 8px; display: block; animation: crown-bounce 1s ease-out; }
+    .win-crown { font-size: 2.2rem; display: block; margin-bottom: 4px; animation: crown-bounce .8s ease-out; }
     @keyframes crown-bounce {
-      0%   { transform:translateY(-30px) scale(.5); opacity:0; }
-      60%  { transform:translateY(8px) scale(1.1); }
-      80%  { transform:translateY(-4px) scale(.97); }
+      0%   { transform:translateY(-20px) scale(.5); opacity:0; }
+      65%  { transform:translateY(5px) scale(1.1); }
       100% { transform:translateY(0) scale(1); opacity:1; }
     }
 
     .win-title {
-      font-size: 2rem; margin-bottom: 12px;
+      font-size: 1.6rem; margin-bottom: 8px;
       background: linear-gradient(180deg,#fff8dc,#ffd700,#c8930a);
       -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
       animation: gold-shimmer 2s ease-in-out infinite alternate;
     }
     @keyframes gold-shimmer {
-      from { filter:drop-shadow(0 2px 4px rgba(200,147,10,.5)); }
-      to   { filter:drop-shadow(0 2px 18px rgba(255,215,0,.95)); }
+      from { filter: drop-shadow(0 2px 4px rgba(200,147,10,.5)); }
+      to   { filter: drop-shadow(0 2px 14px rgba(255,215,0,.9)); }
     }
 
     .win-pattern {
-      font-size: 1rem; color: #ddd;
+      font-size: .95rem; color: #ddd;
       background: rgba(0,0,0,.3); border-radius: 8px;
-      padding: 8px 16px; margin-bottom: 20px;
+      padding: 6px 14px; margin-bottom: 14px; display: inline-block;
       border: 1px solid rgba(255,215,0,.2);
     }
 
@@ -342,8 +334,8 @@
       animation: confetti-fall linear forwards; pointer-events: none;
     }
     @keyframes confetti-fall {
-      0%   { transform:translateY(-10px) rotate(0deg); opacity:1; }
-      100% { transform:translateY(360px) rotate(720deg); opacity:0; }
+      0%   { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(200px) rotate(720deg); opacity: 0; }
     }
 
     /* ── 手機版 ── */
@@ -364,9 +356,9 @@
       .log { font-size: .76rem; max-height: 100px; }
       .player-panel.me-panel { padding: 12px; }
       .player-name { font-size: .85rem; }
-      .win-modal-box { padding: 32px 24px; }
-      .win-crown { font-size: 2.6rem; }
-      .win-title { font-size: 1.6rem; }
+      .win-box { padding: 16px 20px; }
+      .win-crown { font-size: 1.8rem; }
+      .win-title { font-size: 1.3rem; }
     }
   </style>
 </head>
@@ -410,16 +402,6 @@
     </div>
   </div>
 
-  <!-- ── 胡牌 Modal（全螢幕）── -->
-  <div class="win-modal" id="win-modal">
-    <div class="win-modal-box">
-      <span class="win-crown" id="win-crown">👑</span>
-      <h2 class="win-title" id="win-title">胡牌！</h2>
-      <p class="win-pattern" id="win-msg"></p>
-      <button class="btn" id="new-game-btn" style="display:none">再來一局</button>
-    </div>
-  </div>
-
   <!-- ── 遊戲 ── -->
   <div id="game-screen">
     <div class="game-info">
@@ -438,6 +420,16 @@
         <button class="btn secondary" id="skip-btn">跳過</button>
       </div>
       <div class="status-msg" id="status-msg"></div>
+    </div>
+
+    <!-- 胡牌橫幅 -->
+    <div class="win-overlay" id="win-overlay">
+      <div class="win-box">
+        <span class="win-crown" id="win-crown">👑</span>
+        <h2 class="win-title" id="win-title">胡牌！</h2>
+        <p class="win-pattern" id="win-msg"></p>
+        <button class="btn" id="new-game-btn" style="display:none">再來一局</button>
+      </div>
     </div>
 
     <!-- 2. 棄牌區 -->
@@ -829,8 +821,7 @@
     // ── 彩色紙片 ──
 
     function launchConfetti() {
-      const box = document.querySelector('.win-modal-box');
-      // 移除舊的
+      const box = document.querySelector('.win-box');
       box.querySelectorAll('.confetti-piece').forEach(el => el.remove());
       const colors = ['#ffd700','#ff6b6b','#4ade80','#60a5fa','#f472b6','#fb923c','#fff'];
       for (let i = 0; i < 45; i++) {
@@ -895,18 +886,18 @@
         document.getElementById('win-title').textContent = '胡牌！';
         document.getElementById('win-msg').textContent =
           w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
-        document.getElementById('win-modal').classList.add('show');
+        document.getElementById('win-overlay').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
         if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
       } else if (roomData.draw) {
         document.getElementById('win-crown').textContent = '🤝';
         document.getElementById('win-title').textContent = '平局！';
         document.getElementById('win-msg').textContent = '牌堆已空，本局平局！';
-        document.getElementById('win-modal').classList.add('show');
+        document.getElementById('win-overlay').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
         if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
       } else {
-        document.getElementById('win-modal').classList.remove('show');
+        document.getElementById('win-overlay').classList.remove('show');
         confettiLaunched = false;
       }
 
