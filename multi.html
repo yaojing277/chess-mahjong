@@ -489,7 +489,13 @@
       return p.type;
     }
     function pairKey(t) { return t==='帥'?'將':t; }
-    function isPair(two) { return two.length===2&&pairKey(two[0].type)===pairKey(two[1].type); }
+    function isPair(two) {
+      if (two.length !== 2) return false;
+      const [a, b] = two;
+      if (pairKey(a.type) !== pairKey(b.type)) return false;
+      if (a.type === '車') return a.color === b.color;
+      return true;
+    }
     function combos(a,k) {
       if(k===0)return[[]]; if(a.length<k)return[];
       const[h,...t]=a; return [...combos(t,k-1).map(c=>[h,...c]),...combos(t,k)];
