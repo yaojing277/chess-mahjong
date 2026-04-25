@@ -157,8 +157,8 @@
       <button class="btn" style="width:100%;margin-top:4px" id="create-btn">建立新房間</button>
       <hr class="divider">
       <label style="font-size:.9rem;color:#ccc">加入現有房間</label>
-      <input type="text" id="room-code-input" placeholder="輸入 4 碼房間代碼" maxlength="4"
-             style="letter-spacing:4px;text-transform:uppercase">
+      <input type="text" id="room-code-input" placeholder="輸入 4 位數字代碼" maxlength="4"
+             inputmode="numeric" pattern="[0-9]*" style="letter-spacing:4px">
       <button class="btn secondary" style="width:100%;margin-top:4px" id="join-btn">加入房間</button>
       <div class="error-msg" id="lobby-error"></div>
     </div>
@@ -299,9 +299,8 @@ const firebaseConfig = {
     function pushLog(log, msg) { return [...toArr(log), `[${timeStr()}] ${msg}`].slice(-60); }
 
     async function genRoomId() {
-      const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       while(true){
-        const id=Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+        const id=String(Math.floor(1000+Math.random()*9000));
         const snap=await get(ref(db,`rooms/${id}/hostUid`));
         if(!snap.exists())return id;
       }
@@ -361,7 +360,7 @@ const firebaseConfig = {
 
     async function joinRoom() {
       const name = document.getElementById('player-name').value.trim() || '玩家';
-      const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+      const code = document.getElementById('room-code-input').value.trim();
       if (code.length !== 4) return showLobbyErr('請輸入 4 碼代碼');
       document.getElementById('join-btn').disabled = true;
       try {
