@@ -343,6 +343,37 @@
       100% { transform: translateY(200px) rotate(720deg); opacity: 0; }
     }
 
+    /* ── 計分 ── */
+    .score-changes {
+      display: flex; gap: 8px; justify-content: center;
+      flex-wrap: wrap; margin-bottom: 14px;
+    }
+    .score-item {
+      background: rgba(0,0,0,.3); border-radius: 8px;
+      padding: 7px 14px; display: flex; flex-direction: column;
+      align-items: center; gap: 2px; min-width: 72px;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .score-item.positive { border-color: rgba(74,222,128,.35); background: rgba(74,222,128,.09); }
+    .score-item.negative { border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.09); }
+    .score-name { font-size: .75rem; color: #aaa; white-space: nowrap; }
+    .score-delta { font-size: 1.25rem; font-weight: bold; }
+    .score-item.positive .score-delta { color: #4ade80; }
+    .score-item.negative .score-delta { color: #f87171; }
+    .score-item.neutral  .score-delta { color: #888; }
+    .score-total { font-size: .8rem; color: #ffd700; }
+    .win-type-badge {
+      font-size: .82rem; color: #ffd700; letter-spacing: 1px;
+      background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.22);
+      border-radius: 8px; padding: 3px 12px; margin-bottom: 12px; display: inline-block;
+    }
+    .score-badge {
+      font-size: .72rem; color: #ffd700;
+      background: rgba(255,215,0,.12); border: 1px solid rgba(255,215,0,.22);
+      border-radius: 5px; padding: 1px 6px; font-weight: bold;
+    }
+    .score-badge.neg { color: #f87171; background: rgba(248,113,113,.1); border-color: rgba(248,113,113,.22); }
+
     /* ── 手機版 ── */
     @media (max-width: 600px) {
       body { padding: 10px; }
@@ -430,6 +461,8 @@
         <span class="win-crown" id="win-crown">👑</span>
         <h2 class="win-title" id="win-title">胡牌！</h2>
         <p class="win-pattern" id="win-msg"></p>
+        <div id="win-type-badge" class="win-type-badge" style="display:none"></div>
+        <div class="score-changes" id="win-score-summary"></div>
         <button class="btn" id="new-game-btn" style="display:none">再來一局</button>
       </div>
     </div>
@@ -589,7 +622,7 @@
           currentPlayer: 0, dealerIndex: 0,
           drawnPieceId: null, lastDiscard: null, lastDiscardPlayer: -1, winner: null,
           players:  [{ uid: myUid, name, isDealer: false, online: true, handCount: 0 }],
-          hands:    [[]], deck: [], discards: [[]], log: [],
+          hands:    [[]], deck: [], discards: [[]], log: [], scores: [0],
         });
         myIndex = 0; myRoomId = roomId; isHost = true;
         document.getElementById('display-room-code').textContent = roomId;
@@ -620,6 +653,7 @@
         upd[`rooms/${code}/players/${idx}`] = { uid: myUid, name, isDealer: false, online: true, handCount: 0 };
         upd[`rooms/${code}/hands/${idx}`]   = [];
         upd[`rooms/${code}/discards/${idx}`]= [];
+        upd[`rooms/${code}/scores/${idx}`]  = 0;
         await update(ref(db), upd);
 
         myIndex = idx; myRoomId = code; isHost = false;
@@ -679,8 +713,12 @@
       for (let i = 0; i < 4; i++) for (let p = 0; p < n; p++) hands[p].push(deck.pop());
       hands.forEach(h => sortHand(h));
 
+      const currentScores = toArr(room.scores || []);
+      while (currentScores.length < n) currentScores.push(0);
+
       const upd = {};
       hands.forEach((h, i)   => { upd[`rooms/${myRoomId}/hands/${i}`]    = h; });
+      upd[`rooms/${myRoomId}/scores`] = currentScores;
       players.forEach((_, i) => {
         upd[`rooms/${myRoomId}/players/${i}/isDealer`]  = i === dealerIdx;
         upd[`rooms/${myRoomId}/players/${i}/handCount`] = 4;
@@ -729,9 +767,13 @@
       upd[`rooms/${myRoomId}/lastDiscardPlayer`]           = -1;
 
       if (result.win) {
-        log = pushLog(log, `「${players[myIndex].name}」胡牌！${result.pattern}`);
+        const scores = toArr(roomData.scores || []);
+        while (scores.length < players.length) scores.push(0);
+        const changes = players.map((_, i) => i === myIndex ? 3 : -1);
+        upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
+        log = pushLog(log, `「${players[myIndex].name}」自摸胡牌！${result.pattern}`);
         upd[`rooms/${myRoomId}/phase`]   = 'idle';
-        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern };
+        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '自摸', scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`]       = 'discard';
         upd[`rooms/${myRoomId}/drawnPieceId`]= piece.id;
@@ -772,11 +814,17 @@
         sortHand(winner.hand);
         upd[`rooms/${myRoomId}/hands/${winner.idx}`]          = winner.hand;
         upd[`rooms/${myRoomId}/players/${winner.idx}/handCount`] = winner.hand.length;
-        log = pushLog(log, `「${winner.name}」以「${winner.pattern}」胡牌（放砲）！`);
+        const scores = toArr(roomData.scores || []);
+        while (scores.length < n) scores.push(0);
+        const changes = Array(n).fill(0);
+        changes[winner.idx] = 3;
+        changes[myIndex]    = -3;
+        upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
+        log = pushLog(log, `「${winner.name}」以「${winner.pattern}」胡牌（放砲）！「${players[myIndex].name}」放砲`);
         upd[`rooms/${myRoomId}/phase`]             = 'idle';
         upd[`rooms/${myRoomId}/lastDiscard`]       = null;
         upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
-        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern };
+        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, winType: '放砲', discardPlayer: myIndex, scoreChanges: changes };
       } else {
         const next = (myIndex + 1) % n;
         upd[`rooms/${myRoomId}/phase`]             = 'can-eat';
@@ -809,9 +857,15 @@
       upd[`rooms/${myRoomId}/drawnPieceId`]                 = piece.id;
 
       if (result.win) {
-        log = pushLog(log, `「${players[myIndex].name}」胡牌！${result.pattern}`);
+        const scores = toArr(roomData.scores || []);
+        while (scores.length < players.length) scores.push(0);
+        const changes = Array(players.length).fill(0);
+        changes[myIndex] = 3;
+        changes[fromIdx] = -3;
+        upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
+        log = pushLog(log, `「${players[myIndex].name}」吃牌後胡牌！${result.pattern}`);
         upd[`rooms/${myRoomId}/phase`]  = 'idle';
-        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern };
+        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '吃牌胡', sourcePlayer: fromIdx, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`] = 'discard';
       }
@@ -853,16 +907,19 @@
 
     function renderWaiting() {
       const players = toArr(roomData.players);
+      const scores  = toArr(roomData.scores || []);
       const ul = document.getElementById('player-list-waiting');
       ul.innerHTML = '';
       players.forEach((p, i) => {
+        const sc = scores[i] ?? 0;
         const li = document.createElement('li');
         li.innerHTML = `
           <div class="player-avatar avatar-${i}">${p.name.charAt(0)}</div>
           <span>${p.name}</span>
           ${i===0?'<span class="host-badge">房主</span>':''}
           ${p.uid===myUid?'<span class="me-badge">你</span>':''}
-          <span class="dot ${p.online?'online':'offline'}" style="margin-left:auto"></span>`;
+          <span class="score-badge${sc<0?' neg':''}" style="margin-left:auto">${sc>=0?'+':''}${sc}分</span>
+          <span class="dot ${p.online?'online':'offline'}"></span>`;
         ul.appendChild(li);
       });
       document.getElementById('wait-hint').textContent =
@@ -895,6 +952,25 @@
         document.getElementById('win-title').textContent = '胡牌！';
         document.getElementById('win-msg').textContent =
           w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
+        // 勝利類型
+        const typeBadge = document.getElementById('win-type-badge');
+        if (w.winType) { typeBadge.textContent = w.winType; typeBadge.style.display = 'inline-block'; }
+        else { typeBadge.style.display = 'none'; }
+        // 得分明細
+        const scores = toArr(roomData.scores || []);
+        const summaryEl = document.getElementById('win-score-summary');
+        if (w.scoreChanges) {
+          summaryEl.innerHTML = players.map((p, i) => {
+            const ch = w.scoreChanges[i] || 0;
+            const cls = ch > 0 ? 'positive' : ch < 0 ? 'negative' : 'neutral';
+            const chStr = ch > 0 ? `+${ch}` : String(ch);
+            return `<div class="score-item ${cls}">
+              <span class="score-name">${p.name}${p.uid===myUid?' (你)':''}</span>
+              <span class="score-delta">${chStr}</span>
+              <span class="score-total">${scores[i] ?? 0}分</span>
+            </div>`;
+          }).join('');
+        } else { summaryEl.innerHTML = ''; }
         document.getElementById('win-overlay').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
         if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
@@ -902,6 +978,8 @@
         document.getElementById('win-crown').textContent = '🤝';
         document.getElementById('win-title').textContent = '平局！';
         document.getElementById('win-msg').textContent = '牌堆已空，本局平局！';
+        document.getElementById('win-type-badge').style.display = 'none';
+        document.getElementById('win-score-summary').innerHTML = '';
         document.getElementById('win-overlay').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
         if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
@@ -930,6 +1008,7 @@
       myEl.innerHTML     = '';
 
       const players = toArr(roomData.players);
+      const scores  = toArr(roomData.scores || []);
       const isIdle  = roomData.phase === 'idle';
 
       players.forEach((player, idx) => {
@@ -937,6 +1016,8 @@
         const isActive  = idx === roomData.currentPlayer;
         const canDiscard= isMe && isActive && roomData.phase === 'discard';
         const hand      = toArr(roomData.hands?.[idx] || []);
+        const sc        = scores[idx] ?? 0;
+        const scBadge   = `<span class="score-badge${sc<0?' neg':''}">${sc>=0?'+':''}${sc}</span>`;
         const panel     = document.createElement('div');
 
         if (isMe) {
@@ -947,6 +1028,7 @@
           nameDiv.innerHTML = `${player.name}
             ${player.isDealer ? '<span class="dealer-badge">莊</span>' : ''}
             <span class="me-badge">你</span>
+            ${scBadge}
             <span style="color:#aaa;font-size:.85rem">(${hand.length}張)</span>`;
           panel.appendChild(nameDiv);
 
@@ -982,6 +1064,7 @@
           nameDiv.innerHTML = `${player.name}
             ${player.isDealer ? '<span class="dealer-badge">莊</span>' : ''}
             ${!player.online  ? '<span class="offline-badge">離線</span>' : ''}
+            ${scBadge}
             <span style="color:#aaa;font-size:.75rem">(${player.handCount}張)</span>`;
           panel.appendChild(nameDiv);
 
