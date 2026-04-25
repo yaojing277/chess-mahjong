@@ -457,6 +457,7 @@ const firebaseConfig = {
       upd[`rooms/${myRoomId}/lastDiscard`]       = null;
       upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
       upd[`rooms/${myRoomId}/winner`]            = null;
+      upd[`rooms/${myRoomId}/draw`]              = null;
       upd[`rooms/${myRoomId}/log`] = [`[${timeStr()}] 遊戲開始！「${players[dealerIdx].name}」為莊家，請摸牌。`];
       await update(ref(db), upd);
     }
@@ -470,7 +471,8 @@ const firebaseConfig = {
       if (deck.length === 0) {
         await update(ref(db), {
           [`rooms/${myRoomId}/phase`]: 'idle',
-          [`rooms/${myRoomId}/log`]:  pushLog(log, '牌堆已空，本局平局！'),
+          [`rooms/${myRoomId}/draw`]:  true,
+          [`rooms/${myRoomId}/log`]:   pushLog(log, '牌堆已空，本局平局！'),
         });
         return;
       }
@@ -622,11 +624,15 @@ const firebaseConfig = {
       document.getElementById('eat-controls').style.display = (isMyTurn && phase==='can-eat') ? 'block' : 'none';
       document.getElementById('status-msg').textContent = (isMyTurn && phase==='discard') ? '點擊手牌打出一張' : '';
 
-      // 胡牌橫幅
+      // 胡牌／和局橫幅
       if (roomData.winner) {
         const w = roomData.winner;
         document.getElementById('win-msg').textContent =
           w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
+        document.getElementById('win-overlay').classList.add('show');
+        document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
+      } else if (roomData.draw) {
+        document.getElementById('win-msg').textContent = '牌堆已空，本局平局！';
         document.getElementById('win-overlay').classList.add('show');
         document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
       } else {
