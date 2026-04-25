@@ -492,7 +492,8 @@
     function isPair(two) {
       if (two.length !== 2) return false;
       const [a, b] = two;
-      return a.color === b.color && pairKey(a.type) === pairKey(b.type);
+      if (pairKey(a.type) === '將' && pairKey(b.type) === '將') return true; // 帥+將 例外
+      return a.color === b.color && a.type === b.type;
     }
     function combos(a,k) {
       if(k===0)return[[]]; if(a.length<k)return[];
