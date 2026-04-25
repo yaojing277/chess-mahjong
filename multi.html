@@ -133,6 +133,11 @@
     }
     #turn-info { font-size: 1.1rem; color: #ffd700; font-weight: bold; }
     #deck-count { color: #888; font-size: .88rem; margin-top: 4px; }
+    #deck-count .num {
+      color: #ffd700; font-size: 1.15rem; font-weight: bold;
+      text-shadow: 0 0 8px rgba(255,215,0,.6);
+      margin: 0 2px;
+    }
 
     /* ── 玩家面板 ── */
     .others-row { display: flex; gap: 8px; width: 100%; }
@@ -878,7 +883,7 @@
         phase==='can-eat' ? (isMyTurn ? '輪到你 – 吃牌或跳過' : `等待「${curName}」決定${dots}`) :
                              (isMyTurn ? '請打出一張牌'        : `等待「${curName}」打牌${dots}`);
 
-      document.getElementById('deck-count').textContent = `牌堆剩餘：${toArr(roomData.deck).length} 張`;
+      document.getElementById('deck-count').innerHTML = `牌堆剩餘：<span class="num">${toArr(roomData.deck).length}</span> 張`;
       document.getElementById('draw-btn').disabled = !(isMyTurn && (phase==='draw' || phase==='can-eat'));
       document.getElementById('eat-btn').style.display  = (isMyTurn && phase==='can-eat') ? 'inline-block' : 'none';
       document.getElementById('status-msg').textContent = (isMyTurn && phase==='discard') ? '點擊手牌打出一張' : '';
