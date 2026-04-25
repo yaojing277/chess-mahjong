@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>象棋麻將 – 多人版</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Serif TC', '標楷體', serif;
+      background: #2d5a1b; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 20px; color: white;
+    }
+    h1 { font-size: 2rem; margin-bottom: 16px; text-shadow: 2px 2px 4px rgba(0,0,0,.5); }
+    .card {
+      background: rgba(0,0,0,.35); border-radius: 12px; padding: 24px 32px;
+      width: 100%; max-width: 480px; margin-bottom: 16px;
+    }
+    .card h2 { font-size: 1.2rem; margin-bottom: 16px; color: #ffd700; }
+    .btn {
+      background: #ffd700; color: #333; border: none; padding: 11px 28px;
+      font-size: 1rem; border-radius: 8px; cursor: pointer; font-weight: bold;
+      transition: background .2s, transform .1s; margin: 4px;
+    }
+    .btn:hover:not(:disabled) { background: #ffe96e; transform: translateY(-2px); }
+    .btn:disabled { background: #555; color: #888; cursor: not-allowed; }
+    .btn.secondary { background: #5a8a5a; color: white; }
+    .btn.secondary:hover:not(:disabled) { background: #6aaa6a; }
+    .btn.eat { background: #e05c00; color: white; }
+    .btn.eat:hover:not(:disabled) { background: #ff7020; }
+    input[type=text] {
+      width: 100%; padding: 10px 14px; border-radius: 8px;
+      border: 2px solid #666; background: rgba(255,255,255,.1); color: white;
+      font-size: 1rem; margin-bottom: 10px; font-family: inherit;
+    }
+    input[type=text]::placeholder { color: #999; }
+    input[type=text]:focus { outline: none; border-color: #ffd700; }
+    .error-msg { color: #ff7070; font-size: .9rem; margin-top: 8px; min-height: 1.3rem; }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,.15); margin: 18px 0; }
+    /* Lobby */
+    #lobby-screen  { display: none; flex-direction: column; align-items: center; width: 100%; }
+    /* Waiting */
+    #waiting-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+    .room-code-box { text-align: center; margin-bottom: 12px; }
+    .room-code-box .label { font-size: .9rem; color: #aaa; }
+    .room-code-box .code {
+      font-size: 3rem; font-weight: bold; color: #ffd700;
+      letter-spacing: 8px; text-shadow: 0 0 20px rgba(255,215,0,.4);
+    }
+    .copy-hint { font-size: .75rem; color: #888; margin-top: 4px; cursor: pointer; }
+    .copy-hint:hover { color: #ffd700; }
+    .player-list { list-style: none; padding: 0; }
+    .player-list li {
+      padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.1);
+      display: flex; align-items: center; gap: 10px; font-size: 1rem;
+    }
+    .player-list li:last-child { border-bottom: none; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dot.online { background: #4ade80; }
+    .dot.offline { background: #555; }
+    .host-badge { background: #ffd700; color: #333; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
+    .me-badge   { background: #4ade80; color: #1a3a1a; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
+    .offline-badge { background: #555; color: #aaa; font-size: .65rem; padding: 1px 6px; border-radius: 10px; }
+    .wait-hint { color: #888; font-size: .85rem; margin-top: 10px; text-align: center; }
+    /* Game */
+    #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
+    .game-info {
+      background: rgba(0,0,0,.3); border-radius: 10px; padding: 10px 20px;
+      margin-bottom: 16px; text-align: center; width: 100%; max-width: 840px;
+    }
+    #turn-info { font-size: 1.1rem; color: #ffd700; font-weight: bold; }
+    #deck-count { color: #aaa; font-size: .9rem; margin-top: 4px; }
+    .players-area {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      width: 100%; max-width: 840px; margin-bottom: 16px;
+    }
+    .player-panel {
+      background: rgba(0,0,0,.3); border-radius: 10px; padding: 14px;
+      border: 2px solid transparent; transition: border-color .3s, background .3s;
+    }
+    .player-panel.active   { border-color: #ffd700; background: rgba(255,215,0,.08); }
+    .player-panel.me-panel { border-color: #4ade80; }
+    .player-panel.me-panel.active { border-color: #ffd700; background: rgba(255,215,0,.12); }
+    .player-name {
+      font-size: .95rem; margin-bottom: 10px;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .dealer-badge { background: #ffd700; color: #333; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
+    .hand { display: flex; flex-wrap: wrap; gap: 6px; }
+    .piece {
+      width: 50px; height: 50px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.15rem; font-weight: bold; border: 3px solid;
+      transition: transform .2s, box-shadow .2s; user-select: none;
+    }
+    .piece.red    { background: #cc0000; color: #fff; border-color: #8b0000; }
+    .piece.black  { background: #3a3a3a; color: #ddd; border-color: #111; }
+    .piece.hidden { background: #5c3d1a; color: #5c3d1a; border-color: #3d2710; }
+    .piece.selectable:hover { transform: translateY(-6px); box-shadow: 0 6px 18px rgba(0,0,0,.5); cursor: pointer; }
+    .piece.drawn  { animation: pop .4s ease-out; box-shadow: 0 0 14px #ffd700; }
+    @keyframes pop {
+      0%   { transform: scale(.6); opacity: .4; }
+      70%  { transform: scale(1.15); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .piece.eatable { animation: glow 1s ease-in-out infinite alternate; }
+    @keyframes glow {
+      from { box-shadow: 0 0 8px #ffd700; }
+      to   { box-shadow: 0 0 20px #ffd700, 0 0 36px #ffd70066; }
+    }
+    .controls {
+      background: rgba(0,0,0,.3); border-radius: 10px;
+      padding: 14px 24px; margin-bottom: 16px; text-align: center;
+      width: 100%; max-width: 840px;
+    }
+    .status-msg { font-size: 1rem; margin-top: 8px; min-height: 1.4rem; color: #ffd700; font-weight: bold; }
+    .eat-controls { margin-top: 8px; }
+    .win-overlay { display: none; width: 100%; max-width: 840px; margin-bottom: 12px; }
+    .win-overlay.show { display: block; }
+    .win-box {
+      background: #fff8e8; color: #333; border-radius: 12px;
+      padding: 16px 24px; text-align: center; border: 3px solid #ffd700;
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; flex-wrap: wrap;
+    }
+    .win-box h2 { font-size: 1.3rem; color: #cc0000; margin: 0; }
+    .win-box p  { font-size: .95rem; color: #555; margin: 0; }
+    .discard-area {
+      background: rgba(0,0,0,.3); border-radius: 10px; padding: 14px 18px;
+      margin-bottom: 16px; width: 100%; max-width: 840px;
+    }
+    .discard-area h3 { font-size: .9rem; color: #aaa; margin-bottom: 10px; letter-spacing: 1px; }
+    .discard-rows { display: flex; flex-direction: column; gap: 8px; }
+    .discard-row  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .discard-label { font-size: .78rem; color: #888; min-width: 60px; flex-shrink: 0; }
+    .piece.small { width: 34px; height: 34px; font-size: .8rem; border-width: 2px; }
+    .log {
+      background: rgba(0,0,0,.4); border-radius: 8px; padding: 10px 14px;
+      max-height: 130px; overflow-y: auto; width: 100%; max-width: 840px;
+      font-size: .82rem; color: #bbb;
+    }
+    .log p { margin: 2px 0; line-height: 1.4; }
+    .loading { color: #aaa; font-size: 1rem; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <h1>♟ 象棋麻將</h1>
+  <div class="loading" id="loading-msg">連線中…</div>
+
+  <!-- ── 大廳 ─────────────────────────────────────── -->
+  <div id="lobby-screen">
+    <div class="card">
+      <h2>進入遊戲</h2>
+      <label style="font-size:.9rem;color:#ccc">你的名字</label>
+      <input type="text" id="player-name" placeholder="輸入名字" maxlength="10">
+      <button class="btn" style="width:100%;margin-top:4px" id="create-btn">建立新房間</button>
+      <hr class="divider">
+      <label style="font-size:.9rem;color:#ccc">加入現有房間</label>
+      <input type="text" id="room-code-input" placeholder="輸入 4 碼房間代碼" maxlength="4"
+             style="letter-spacing:4px;text-transform:uppercase">
+      <button class="btn secondary" style="width:100%;margin-top:4px" id="join-btn">加入房間</button>
+      <div class="error-msg" id="lobby-error"></div>
+    </div>
+  </div>
+
+  <!-- ── 等待室 ──────────────────────────────────── -->
+  <div id="waiting-screen">
+    <div class="card">
+      <div class="room-code-box">
+        <div class="label">房間代碼（告訴其他玩家）</div>
+        <div class="code" id="display-room-code">----</div>
+        <div class="copy-hint" id="copy-hint">點擊複製</div>
+      </div>
+      <hr class="divider">
+      <h2>玩家列表</h2>
+      <ul class="player-list" id="player-list-waiting"></ul>
+      <div class="wait-hint" id="wait-hint">等待玩家加入…</div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn" id="start-btn" disabled>開始遊戲</button>
+      </div>
+      <div class="error-msg" id="waiting-error"></div>
+    </div>
+  </div>
+
+  <!-- ── 遊戲 ───────────────────────────────────── -->
+  <div id="game-screen">
+    <div class="game-info">
+      <div id="turn-info">—</div>
+      <div id="deck-count">牌堆：32 張</div>
+    </div>
+    <div class="players-area" id="players-area"></div>
+    <div class="controls">
+      <button class="btn" id="draw-btn" disabled>摸牌</button>
+      <div class="eat-controls" id="eat-controls" style="display:none">
+        <button class="btn eat" id="eat-btn">吃牌</button>
+        <button class="btn secondary" id="skip-btn">跳過</button>
+      </div>
+      <div class="status-msg" id="status-msg"></div>
+    </div>
+    <div class="win-overlay" id="win-overlay">
+      <div class="win-box">
+        <h2>胡牌！</h2>
+        <p id="win-msg"></p>
+        <button class="btn" id="new-game-btn" style="display:none">再來一局</button>
+      </div>
+    </div>
+    <div class="discard-area">
+      <h3>棄牌區</h3>
+      <div class="discard-rows" id="discard-rows"></div>
+    </div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getDatabase, ref, get, set, update, onValue, off, onDisconnect }
+                             from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+    // ══════════════════════════════════════════════════════════════════
+    //  ★ 填入你的 Firebase 專案設定（Firebase Console → 專案設定 → 你的應用程式）
+    // ══════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAa6yIrYAJSN2_FA8LtVwPhI75rHFmzQOo",
+  authDomain: "chess-52714.firebaseapp.com",
+  databaseURL: "https://chess-52714-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "chess-52714",
+  storageBucket: "chess-52714.firebasestorage.app",
+  messagingSenderId: "652558875012",
+  appId: "1:652558875012:web:fb8f11e7b51c3ce4ac85d1",
+  measurementId: "G-5475BP18MB"
+};
+
+    // ══════════════════════════════════════════════════════════════════
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getDatabase(app);
+
+    // ── 遊戲邏輯 ────────────────────────────────────────────────────
+
+    function createDeck() {
+      const pieces = []; let id = 0;
+      const R = [['帥',1],['仕',2],['相',2],['車',2],['馬',2],['炮',2],['兵',5]];
+      const B = [['將',1],['士',2],['象',2],['車',2],['馬',2],['包',2],['卒',5]];
+      for (const [t,n] of R) for (let i=0;i<n;i++) pieces.push({id:id++,type:t,color:'red'});
+      for (const [t,n] of B) for (let i=0;i<n;i++) pieces.push({id:id++,type:t,color:'black'});
+      return pieces;
+    }
+    function shuffle(a) {
+      for (let i=a.length-1;i>0;i--) { const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+      return a;
+    }
+    const TO = {'帥':0,'將':0,'仕':1,'士':1,'相':2,'象':2,'車':3,'馬':4,'炮':5,'包':5,'兵':6,'卒':6};
+    const CO = {red:0,black:1};
+    function sortHand(h) { h.sort((a,b)=>CO[a.color]-CO[b.color]||(TO[a.type]??9)-(TO[b.type]??9)); }
+    function pairKey(t) { return t==='帥'?'將':t; }
+    function isPair(two) { return two.length===2&&pairKey(two[0].type)===pairKey(two[1].type); }
+    function combos(a,k) {
+      if(k===0)return[[]]; if(a.length<k)return[];
+      const[h,...t]=a; return [...combos(t,k-1).map(c=>[h,...c]),...combos(t,k)];
+    }
+    function checkWin(hand) {
+      if(hand.length!==5) return{win:false};
+      const trios=[
+        {color:'red',  types:['帥','仕','相'],label:'紅帥+仕+相'},
+        {color:'black',types:['將','士','象'],label:'黑將+士+象'},
+        {color:'red',  types:['車','馬','炮'],label:'紅車+馬+炮'},
+        {color:'black',types:['車','馬','包'],label:'黑車+馬+包'},
+      ];
+      for(const{color,types,label}of trios){
+        const trio=types.map(t=>hand.find(p=>p.type===t&&p.color===color));
+        if(trio.some(p=>!p))continue;
+        const ids=new Set(trio.map(p=>p.id));
+        const rest=hand.filter(p=>!ids.has(p.id));
+        if(isPair(rest))return{win:true,pattern:`${label} + 對子（${rest[0].type}）`};
+      }
+      for(const[type,color,label]of[['卒','black','黑卒'],['兵','red','紅兵']]){
+        const pawns=hand.filter(p=>p.type===type&&p.color===color);
+        if(pawns.length===5)return{win:true,pattern:`五${label}`};
+        if(pawns.length>=3){
+          for(const trio of combos(pawns,3)){
+            const ids=new Set(trio.map(p=>p.id));
+            const rest=hand.filter(p=>!ids.has(p.id));
+            if(isPair(rest))return{win:true,pattern:`三${label} + 對子（${rest[0].type}）`};
+          }
+        }
+      }
+      return{win:false};
+    }
+
+    // ── 工具函式 ────────────────────────────────────────────────────
+
+    function toArr(v) {
+      if(!v) return [];
+      if(Array.isArray(v)) return v.filter(x=>x!=null);
+      return Object.values(v).filter(x=>x!=null);
+    }
+    function timeStr() { return new Date().toLocaleTimeString('zh-TW'); }
+    function pushLog(log, msg) { return [...toArr(log), `[${timeStr()}] ${msg}`].slice(-60); }
+
+    async function genRoomId() {
+      const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      while(true){
+        const id=Array.from({length:4},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+        const snap=await get(ref(db,`rooms/${id}/hostUid`));
+        if(!snap.exists())return id;
+      }
+    }
+
+    // ── 狀態 ────────────────────────────────────────────────────────
+
+    let myUid    = null;
+    let myIndex  = -1;
+    let myRoomId = null;
+    let isHost   = false;
+    let roomData = null;
+    let unsubRoom = null;
+
+    // ── 初始化（不需要登入，用 localStorage 產生持久 UID）──────────
+
+    myUid = localStorage.getItem('chess_mahjong_uid');
+    if (!myUid) {
+      myUid = crypto.randomUUID();
+      localStorage.setItem('chess_mahjong_uid', myUid);
+    }
+    document.getElementById('loading-msg').style.display = 'none';
+    showScreen('lobby');
+
+    // ── 畫面切換 ────────────────────────────────────────────────────
+
+    function showScreen(name) {
+      document.getElementById('lobby-screen').style.display   = name==='lobby'   ? 'flex' : 'none';
+      document.getElementById('waiting-screen').style.display = name==='waiting' ? 'flex' : 'none';
+      document.getElementById('game-screen').style.display    = name==='game'    ? 'flex' : 'none';
+    }
+
+    // ── 大廳操作 ────────────────────────────────────────────────────
+
+    async function createRoom() {
+      const name = document.getElementById('player-name').value.trim() || '玩家';
+      document.getElementById('create-btn').disabled = true;
+      try {
+        const roomId = await genRoomId();
+        await set(ref(db, `rooms/${roomId}`), {
+          hostUid: myUid, phase: 'waiting',
+          currentPlayer: 0, dealerIndex: 0,
+          drawnPieceId: null, lastDiscard: null, lastDiscardPlayer: -1, winner: null,
+          players:  [{ uid: myUid, name, isDealer: false, online: true, handCount: 0 }],
+          hands:    [[]], deck: [], discards: [[]], log: [],
+        });
+        myIndex = 0; myRoomId = roomId; isHost = true;
+        document.getElementById('display-room-code').textContent = roomId;
+        subscribeToRoom(roomId);
+        showScreen('waiting');
+      } catch(e) {
+        showLobbyErr('建立失敗：' + e.message);
+      } finally {
+        document.getElementById('create-btn').disabled = false;
+      }
+    }
+
+    async function joinRoom() {
+      const name = document.getElementById('player-name').value.trim() || '玩家';
+      const code = document.getElementById('room-code-input').value.trim().toUpperCase();
+      if (code.length !== 4) return showLobbyErr('請輸入 4 碼代碼');
+      document.getElementById('join-btn').disabled = true;
+      try {
+        const snap = await get(ref(db, `rooms/${code}`));
+        if (!snap.exists()) return showLobbyErr('找不到房間');
+        const room = snap.val();
+        if (room.phase !== 'waiting') return showLobbyErr('遊戲已開始');
+        const players = toArr(room.players);
+        if (players.length >= 4) return showLobbyErr('房間已滿');
+
+        const idx = players.length;
+        const upd = {};
+        upd[`rooms/${code}/players/${idx}`] = { uid: myUid, name, isDealer: false, online: true, handCount: 0 };
+        upd[`rooms/${code}/hands/${idx}`]   = [];
+        upd[`rooms/${code}/discards/${idx}`]= [];
+        await update(ref(db), upd);
+
+        myIndex = idx; myRoomId = code; isHost = false;
+        document.getElementById('display-room-code').textContent = code;
+        subscribeToRoom(code);
+        showScreen('waiting');
+      } catch(e) {
+        showLobbyErr('加入失敗：' + e.message);
+      } finally {
+        document.getElementById('join-btn').disabled = false;
+      }
+    }
+
+    function showLobbyErr(msg)   { document.getElementById('lobby-error').textContent   = msg; }
+    function showWaitingErr(msg) { document.getElementById('waiting-error').textContent = msg; }
+
+    // ── Firebase 訂閱 ────────────────────────────────────────────────
+
+    function subscribeToRoom(roomId) {
+      if (unsubRoom) { off(ref(db, `rooms/${roomId}`)); unsubRoom = null; }
+      const roomRef = ref(db, `rooms/${roomId}`);
+      unsubRoom = onValue(roomRef, snap => {
+        if (!snap.exists()) return;
+        roomData = snap.val();
+
+        // 重新確認 myIndex（防止重連後對應錯誤）
+        const players = toArr(roomData.players);
+        const found = players.findIndex(p => p.uid === myUid);
+        if (found !== -1) myIndex = found;
+
+        if (roomData.phase === 'waiting') {
+          showScreen('waiting');
+          renderWaiting();
+        } else {
+          showScreen('game');
+          renderGame();
+        }
+      });
+
+      // 在線狀態
+      onValue(ref(db, '.info/connected'), snap => {
+        if (snap.val() && myIndex !== -1) {
+          const pRef = ref(db, `rooms/${roomId}/players/${myIndex}/online`);
+          set(pRef, true);
+          onDisconnect(pRef).set(false);
+        }
+      });
+    }
+
+    // ── 遊戲操作 ────────────────────────────────────────────────────
+
+    async function startGame() {
+      if (!isHost) return;
+      const snap    = await get(ref(db, `rooms/${myRoomId}`));
+      const room    = snap.val();
+      const players = toArr(room.players);
+      if (players.length < 2) return showWaitingErr('至少需要 2 位玩家');
+
+      const n         = players.length;
+      const dealerIdx = room.dealerIndex ?? 0;
+      const deck      = shuffle(createDeck());
+      const hands     = Array.from({length: n}, () => []);
+
+      for (let i = 0; i < 4; i++) for (let p = 0; p < n; p++) hands[p].push(deck.pop());
+      hands.forEach(h => sortHand(h));
+
+      const upd = {};
+      hands.forEach((h, i)   => { upd[`rooms/${myRoomId}/hands/${i}`]    = h; });
+      players.forEach((_, i) => {
+        upd[`rooms/${myRoomId}/players/${i}/isDealer`]  = i === dealerIdx;
+        upd[`rooms/${myRoomId}/players/${i}/handCount`] = 4;
+        upd[`rooms/${myRoomId}/discards/${i}`] = [];
+      });
+      upd[`rooms/${myRoomId}/deck`]              = deck;
+      upd[`rooms/${myRoomId}/phase`]             = 'draw';
+      upd[`rooms/${myRoomId}/currentPlayer`]     = dealerIdx;
+      upd[`rooms/${myRoomId}/dealerIndex`]       = (dealerIdx + 1) % n;
+      upd[`rooms/${myRoomId}/drawnPieceId`]      = null;
+      upd[`rooms/${myRoomId}/lastDiscard`]       = null;
+      upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
+      upd[`rooms/${myRoomId}/winner`]            = null;
+      upd[`rooms/${myRoomId}/log`] = [`[${timeStr()}] 遊戲開始！「${players[dealerIdx].name}」為莊家，請摸牌。`];
+      await update(ref(db), upd);
+    }
+
+    async function drawCard() {
+      if (!roomData) return;
+      const deck    = toArr(roomData.deck);
+      const players = toArr(roomData.players);
+      let log = toArr(roomData.log);
+
+      if (deck.length === 0) {
+        await update(ref(db), {
+          [`rooms/${myRoomId}/phase`]: 'idle',
+          [`rooms/${myRoomId}/log`]:  pushLog(log, '牌堆已空，本局平局！'),
+        });
+        return;
+      }
+
+      const piece   = deck.pop();
+      const myHand  = [...toArr(roomData.hands?.[myIndex] || []), piece];
+      sortHand(myHand);
+      const result  = checkWin(myHand);
+      log = pushLog(log, `「${players[myIndex].name}」摸牌`);
+
+      const upd = {};
+      upd[`rooms/${myRoomId}/deck`]                        = deck;
+      upd[`rooms/${myRoomId}/hands/${myIndex}`]            = myHand;
+      upd[`rooms/${myRoomId}/players/${myIndex}/handCount`]= myHand.length;
+
+      if (result.win) {
+        log = pushLog(log, `「${players[myIndex].name}」胡牌！${result.pattern}`);
+        upd[`rooms/${myRoomId}/phase`]   = 'idle';
+        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern };
+      } else {
+        upd[`rooms/${myRoomId}/phase`]       = 'discard';
+        upd[`rooms/${myRoomId}/drawnPieceId`]= piece.id;
+      }
+      upd[`rooms/${myRoomId}/log`] = log;
+      await update(ref(db), upd);
+    }
+
+    async function discardCard(pieceId) {
+      if (!roomData) return;
+      const players   = toArr(roomData.players);
+      const n         = players.length;
+      const myHand    = toArr(roomData.hands?.[myIndex] || []);
+      const discarded = myHand.find(p => p.id === pieceId);
+      if (!discarded) return;
+
+      const newHand    = myHand.filter(p => p.id !== pieceId);
+      const myDiscards = [...toArr(roomData.discards?.[myIndex] || []), discarded];
+      let log = pushLog(toArr(roomData.log), `「${players[myIndex].name}」打出「${discarded.color==='red'?'紅':'黑'}${discarded.type}」`);
+
+      const upd = {};
+      upd[`rooms/${myRoomId}/hands/${myIndex}`]             = newHand;
+      upd[`rooms/${myRoomId}/players/${myIndex}/handCount`] = newHand.length;
+      upd[`rooms/${myRoomId}/discards/${myIndex}`]          = myDiscards;
+      upd[`rooms/${myRoomId}/drawnPieceId`]                 = null;
+
+      // 放砲檢查
+      let winner = null;
+      for (let i = 1; i < n; i++) {
+        const ci    = (myIndex + i) % n;
+        const cHand = toArr(roomData.hands?.[ci] || []);
+        const res   = checkWin([...cHand, discarded]);
+        if (res.win) { winner = { idx: ci, name: players[ci].name, pattern: res.pattern, hand: [...cHand, discarded] }; break; }
+      }
+
+      if (winner) {
+        myDiscards.pop();
+        upd[`rooms/${myRoomId}/discards/${myIndex}`]          = myDiscards;
+        sortHand(winner.hand);
+        upd[`rooms/${myRoomId}/hands/${winner.idx}`]          = winner.hand;
+        upd[`rooms/${myRoomId}/players/${winner.idx}/handCount`] = winner.hand.length;
+        log = pushLog(log, `「${winner.name}」以「${winner.pattern}」胡牌（放砲）！`);
+        upd[`rooms/${myRoomId}/phase`]             = 'idle';
+        upd[`rooms/${myRoomId}/lastDiscard`]       = null;
+        upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
+        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern };
+      } else {
+        const next = (myIndex + 1) % n;
+        upd[`rooms/${myRoomId}/phase`]             = 'can-eat';
+        upd[`rooms/${myRoomId}/currentPlayer`]     = next;
+        upd[`rooms/${myRoomId}/lastDiscard`]       = discarded;
+        upd[`rooms/${myRoomId}/lastDiscardPlayer`] = myIndex;
+      }
+
+      upd[`rooms/${myRoomId}/log`] = log;
+      await update(ref(db), upd);
+    }
+
+    async function eatCard() {
+      if (!roomData?.lastDiscard) return;
+      const piece   = roomData.lastDiscard;
+      const fromIdx = roomData.lastDiscardPlayer;
+      const players = toArr(roomData.players);
+      const pile    = toArr(roomData.discards?.[fromIdx] || []).filter(p => p.id !== piece.id);
+      const myHand  = [...toArr(roomData.hands?.[myIndex] || []), piece];
+      sortHand(myHand);
+      const result  = checkWin(myHand);
+      let log = pushLog(toArr(roomData.log), `「${players[myIndex].name}」吃了「${piece.color==='red'?'紅':'黑'}${piece.type}」`);
+
+      const upd = {};
+      upd[`rooms/${myRoomId}/discards/${fromIdx}`]          = pile;
+      upd[`rooms/${myRoomId}/hands/${myIndex}`]             = myHand;
+      upd[`rooms/${myRoomId}/players/${myIndex}/handCount`] = myHand.length;
+      upd[`rooms/${myRoomId}/lastDiscard`]                  = null;
+      upd[`rooms/${myRoomId}/lastDiscardPlayer`]            = -1;
+      upd[`rooms/${myRoomId}/drawnPieceId`]                 = piece.id;
+
+      if (result.win) {
+        log = pushLog(log, `「${players[myIndex].name}」胡牌！${result.pattern}`);
+        upd[`rooms/${myRoomId}/phase`]  = 'idle';
+        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern };
+      } else {
+        upd[`rooms/${myRoomId}/phase`] = 'discard';
+      }
+      upd[`rooms/${myRoomId}/log`] = log;
+      await update(ref(db), upd);
+    }
+
+    async function skipEat() {
+      await update(ref(db), {
+        [`rooms/${myRoomId}/lastDiscard`]:       null,
+        [`rooms/${myRoomId}/lastDiscardPlayer`]: -1,
+        [`rooms/${myRoomId}/phase`]:             'draw',
+      });
+    }
+
+    // ── 渲染 ────────────────────────────────────────────────────────
+
+    function renderWaiting() {
+      const players = toArr(roomData.players);
+      const ul = document.getElementById('player-list-waiting');
+      ul.innerHTML = '';
+      players.forEach((p, i) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="dot ${p.online?'online':'offline'}"></span>
+          ${p.name}
+          ${i===0?' <span class="host-badge">房主</span>':''}
+          ${p.uid===myUid?' <span class="me-badge">你</span>':''}`;
+        ul.appendChild(li);
+      });
+      document.getElementById('wait-hint').textContent =
+        players.length < 4 ? `等待中…（${players.length}/4 人）` : '人數已滿，房主可開始遊戲';
+      document.getElementById('start-btn').disabled = !isHost || players.length < 2;
+    }
+
+    function renderGame() {
+      const players = toArr(roomData.players);
+      const phase   = roomData.phase;
+      const isMyTurn= myIndex === roomData.currentPlayer;
+      const curName = players[roomData.currentPlayer]?.name ?? '?';
+
+      document.getElementById('turn-info').textContent =
+        phase==='idle'    ? '遊戲結束' :
+        phase==='draw'    ? (isMyTurn ? '輪到你 – 摸牌'        : `等待「${curName}」摸牌…`) :
+        phase==='can-eat' ? (isMyTurn ? '輪到你 – 吃牌或跳過'  : `等待「${curName}」決定…`) :
+                             (isMyTurn ? '請打出一張牌'         : `等待「${curName}」打牌…`);
+
+      document.getElementById('deck-count').textContent = `牌堆剩餘：${toArr(roomData.deck).length} 張`;
+      document.getElementById('draw-btn').disabled = !(isMyTurn && phase==='draw');
+      document.getElementById('eat-controls').style.display = (isMyTurn && phase==='can-eat') ? 'block' : 'none';
+      document.getElementById('status-msg').textContent = (isMyTurn && phase==='discard') ? '點擊手牌打出一張' : '';
+
+      // 胡牌橫幅
+      if (roomData.winner) {
+        const w = roomData.winner;
+        document.getElementById('win-msg').textContent =
+          w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
+        document.getElementById('win-overlay').classList.add('show');
+        document.getElementById('new-game-btn').style.display = isHost ? 'inline-block' : 'none';
+      } else {
+        document.getElementById('win-overlay').classList.remove('show');
+      }
+
+      renderPlayers();
+      renderDiscards();
+      renderLog();
+    }
+
+    function renderPlayers() {
+      const area    = document.getElementById('players-area');
+      area.innerHTML = '';
+      const players = toArr(roomData.players);
+      const isIdle  = roomData.phase === 'idle';
+
+      players.forEach((player, idx) => {
+        const isMe      = player.uid === myUid;
+        const isActive  = idx === roomData.currentPlayer;
+        const canDiscard= isMe && isActive && roomData.phase === 'discard';
+
+        const panel = document.createElement('div');
+        panel.className = `player-panel${isActive?' active':''}${isMe?' me-panel':''}`;
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'player-name';
+        nameDiv.innerHTML = `${player.name}
+          ${player.isDealer ? '<span class="dealer-badge">莊</span>' : ''}
+          ${isMe            ? '<span class="me-badge">你</span>'     : ''}
+          ${!player.online  ? '<span class="offline-badge">離線</span>' : ''}
+          <span style="color:#aaa;font-size:.82rem">(${player.handCount}張)</span>`;
+        panel.appendChild(nameDiv);
+
+        const handDiv = document.createElement('div');
+        handDiv.className = 'hand';
+        const hand      = toArr(roomData.hands?.[idx] || []);
+        const showFace  = isMe || isIdle;
+
+        hand.forEach(piece => {
+          const el = document.createElement('div');
+          if (showFace) {
+            const isNew = piece.id === roomData.drawnPieceId;
+            el.className = `piece ${piece.color}${canDiscard?' selectable':''}${isNew?' drawn':''}`;
+            el.textContent = piece.type;
+            el.title = `${piece.color==='red'?'紅':'黑'}${piece.type}`;
+            if (canDiscard) el.onclick = () => discardCard(piece.id);
+          } else {
+            el.className = 'piece hidden';
+            el.textContent = '♟';
+          }
+          handDiv.appendChild(el);
+        });
+
+        panel.appendChild(handDiv);
+        area.appendChild(panel);
+      });
+    }
+
+    function renderDiscards() {
+      const rows    = document.getElementById('discard-rows');
+      rows.innerHTML = '';
+      toArr(roomData.players).forEach((player, i) => {
+        const row   = document.createElement('div');
+        row.className = 'discard-row';
+        const label = document.createElement('span');
+        label.className = 'discard-label';
+        label.textContent = `${player.name}：`;
+        row.appendChild(label);
+
+        const pile = toArr(roomData.discards?.[i] || []);
+        if (pile.length === 0) {
+          const empty = document.createElement('span');
+          empty.style.cssText = 'color:#555;font-size:.8rem';
+          empty.textContent = '尚無棄牌';
+          row.appendChild(empty);
+        } else {
+          pile.forEach(piece => {
+            const el = document.createElement('div');
+            const eatable = roomData.lastDiscard && piece.id === roomData.lastDiscard.id;
+            el.className = `piece small ${piece.color}${eatable?' eatable':''}`;
+            el.textContent = piece.type;
+            el.title = `${piece.color==='red'?'紅':'黑'}${piece.type}${eatable?'（可吃）':''}`;
+            row.appendChild(el);
+          });
+        }
+        rows.appendChild(row);
+      });
+    }
+
+    function renderLog() {
+      const logEl = document.getElementById('log');
+      const atBot = logEl.scrollHeight - logEl.scrollTop <= logEl.clientHeight + 2;
+      logEl.innerHTML = toArr(roomData.log).map(l => `<p>${l}</p>`).join('');
+      if (atBot) logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // ── 事件綁定 ────────────────────────────────────────────────────
+
+    document.getElementById('create-btn').onclick  = createRoom;
+    document.getElementById('join-btn').onclick    = joinRoom;
+    document.getElementById('start-btn').onclick   = startGame;
+    document.getElementById('draw-btn').onclick    = drawCard;
+    document.getElementById('eat-btn').onclick     = eatCard;
+    document.getElementById('skip-btn').onclick    = skipEat;
+    document.getElementById('new-game-btn').onclick= startGame;
+
+    document.getElementById('display-room-code').onclick = () => {
+      if (!myRoomId) return;
+      navigator.clipboard.writeText(myRoomId).then(() => {
+        document.getElementById('copy-hint').textContent = '已複製！';
+        setTimeout(() => document.getElementById('copy-hint').textContent = '點擊複製', 2000);
+      });
+    };
+
+    document.getElementById('room-code-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') joinRoom();
+    });
+    document.getElementById('player-name').addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        document.getElementById('room-code-input').value.trim().length === 4 ? joinRoom() : createRoom();
+      }
+    });
+  </script>
+</body>
+</html>
