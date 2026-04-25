@@ -149,11 +149,12 @@
       background: rgba(0,0,0,.3); border-radius: 10px; padding: 14px 18px;
       margin-bottom: 16px; width: 100%; max-width: 840px;
     }
-    .discard-area h3 { font-size: .9rem; color: #aaa; margin-bottom: 10px; letter-spacing: 1px; }
-    .discard-rows { display: flex; flex-direction: column; gap: 8px; }
-    .discard-row  { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .discard-label { font-size: .78rem; color: #888; min-width: 60px; flex-shrink: 0; }
-    .piece.small { width: 34px; height: 34px; font-size: .8rem; border-width: 2px; }
+    .discard-area h3 { font-size: .9rem; color: #aaa; margin-bottom: 12px; letter-spacing: 1px; }
+    .discard-rows { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .discard-row  { display: flex; flex-direction: column; gap: 6px; }
+    .discard-label { font-size: .95rem; color: #ccc; font-weight: bold; }
+    .discard-pieces { display: flex; flex-wrap: wrap; gap: 6px; }
+    .piece.small { width: 44px; height: 44px; font-size: 1rem; border-width: 2px; }
     .log {
       background: rgba(0,0,0,.4); border-radius: 8px; padding: 10px 14px;
       max-height: 130px; overflow-y: auto; width: 100%; max-width: 840px;
@@ -783,22 +784,26 @@ const firebaseConfig = {
     }
 
     function renderDiscards() {
-      const rows    = document.getElementById('discard-rows');
+      const rows = document.getElementById('discard-rows');
       rows.innerHTML = '';
       toArr(roomData.players).forEach((player, i) => {
-        const row   = document.createElement('div');
+        const row = document.createElement('div');
         row.className = 'discard-row';
+
         const label = document.createElement('span');
         label.className = 'discard-label';
-        label.textContent = `${player.name}：`;
+        label.textContent = `${player.name}`;
         row.appendChild(label);
+
+        const piecesDiv = document.createElement('div');
+        piecesDiv.className = 'discard-pieces';
 
         const pile = toArr(roomData.discards?.[i] || []);
         if (pile.length === 0) {
           const empty = document.createElement('span');
-          empty.style.cssText = 'color:#555;font-size:.8rem';
+          empty.style.cssText = 'color:#555;font-size:.9rem';
           empty.textContent = '尚無棄牌';
-          row.appendChild(empty);
+          piecesDiv.appendChild(empty);
         } else {
           pile.forEach(piece => {
             const el = document.createElement('div');
@@ -806,9 +811,10 @@ const firebaseConfig = {
             el.className = `piece small ${piece.color}${eatable?' eatable':''}`;
             el.textContent = pieceChar(piece);
             el.title = `${piece.color==='red'?'紅':'黑'}${pieceChar(piece)}${eatable?'（可吃）':''}`;
-            row.appendChild(el);
+            piecesDiv.appendChild(el);
           });
         }
+        row.appendChild(piecesDiv);
         rows.appendChild(row);
       });
     }
