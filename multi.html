@@ -1098,6 +1098,7 @@
     function renderDiscards() {
       const rows = document.getElementById('discard-rows');
       rows.innerHTML = '';
+      const canEatNow = roomData.phase === 'can-eat' && myIndex === roomData.currentPlayer;
       toArr(roomData.players).forEach((player, i) => {
         const row = document.createElement('div');
         row.className = 'discard-row';
@@ -1120,7 +1121,7 @@
           pile.forEach((piece, j) => {
             const el = document.createElement('div');
             const isLatest = j === pile.length - 1;
-            const eatable = roomData.lastDiscard && piece.id === roomData.lastDiscard.id;
+            const eatable = canEatNow && roomData.lastDiscard && piece.id === roomData.lastDiscard.id;
             el.className = `piece small ${piece.color}${eatable?' eatable':''}${isLatest?' latest':''}`;
             el.textContent = pieceChar(piece);
             el.title = `${piece.color==='red'?'紅':'黑'}${pieceChar(piece)}${eatable?'（可吃）':''}`;
