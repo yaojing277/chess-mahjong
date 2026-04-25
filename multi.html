@@ -72,15 +72,21 @@
     #turn-info { font-size: 1.1rem; color: #ffd700; font-weight: bold; }
     #deck-count { color: #aaa; font-size: .9rem; margin-top: 4px; }
     .players-area {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+      display: flex; flex-direction: column; gap: 10px;
       width: 100%; max-width: 840px; margin-bottom: 16px;
     }
+    /* 其他玩家列 */
+    .others-row { display: flex; gap: 8px; width: 100%; }
     .player-panel {
-      background: rgba(0,0,0,.3); border-radius: 10px; padding: 14px;
+      background: rgba(0,0,0,.3); border-radius: 10px; padding: 12px;
       border: 2px solid transparent; transition: border-color .3s, background .3s;
     }
+    .player-panel.compact { flex: 1; min-width: 0; }
     .player-panel.active   { border-color: #ffd700; background: rgba(255,215,0,.08); }
-    .player-panel.me-panel { border-color: #4ade80; }
+    .player-panel.me-panel {
+      border-color: #4ade80; width: 100%;
+      padding: 16px 20px; background: rgba(0,80,0,.25);
+    }
     .player-panel.me-panel.active { border-color: #ffd700; background: rgba(255,215,0,.12); }
     .player-name {
       font-size: .95rem; margin-bottom: 10px;
@@ -88,17 +94,30 @@
     }
     .dealer-badge { background: #ffd700; color: #333; font-size: .65rem; padding: 1px 6px; border-radius: 10px; font-weight: bold; }
     .hand { display: flex; flex-wrap: wrap; gap: 6px; }
+    .hand.large { gap: 10px; }
     .piece {
       width: 50px; height: 50px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-size: 1.15rem; font-weight: bold; border: 3px solid;
       transition: transform .2s, box-shadow .2s; user-select: none;
     }
+    /* 自己手牌放大版 */
+    .piece.large {
+      width: 72px; height: 72px; font-size: 1.6rem; border-width: 4px;
+    }
     .piece.red    { background: #cc0000; color: #fff; border-color: #8b0000; }
     .piece.black  { background: #3a3a3a; color: #ddd; border-color: #111; }
     .piece.hidden { background: #5c3d1a; color: #5c3d1a; border-color: #3d2710; }
-    .piece.selectable:hover { transform: translateY(-6px); box-shadow: 0 6px 18px rgba(0,0,0,.5); cursor: pointer; }
+    .piece.selectable:hover { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(0,0,0,.6); cursor: pointer; }
     .piece.drawn  { animation: pop .4s ease-out; box-shadow: 0 0 14px #ffd700; }
+    /* 切換顯示按鈕 */
+    .toggle-others {
+      background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.15);
+      color: #aaa; border-radius: 6px; padding: 4px 14px;
+      font-size: .8rem; cursor: pointer; align-self: flex-end;
+      transition: color .2s;
+    }
+    .toggle-others:hover { color: #ffd700; }
     @keyframes pop {
       0%   { transform: scale(.6); opacity: .4; }
       70%  { transform: scale(1.15); }
@@ -190,7 +209,11 @@
       <div id="turn-info">—</div>
       <div id="deck-count">牌堆：32 張</div>
     </div>
-    <div class="players-area" id="players-area"></div>
+    <div class="players-area" id="players-area">
+      <div class="others-row" id="others-area"></div>
+      <button class="toggle-others" id="toggle-others-btn">▲ 隱藏其他玩家</button>
+      <div id="my-area"></div>
+    </div>
     <div class="controls">
       <button class="btn" id="draw-btn" disabled>摸牌</button>
       <div class="eat-controls" id="eat-controls" style="display:none">
@@ -645,9 +668,20 @@ const firebaseConfig = {
       renderLog();
     }
 
+    let showOthers = true;
+
+    function toggleOthers() {
+      showOthers = !showOthers;
+      document.getElementById('others-area').style.display = showOthers ? 'flex' : 'none';
+      document.getElementById('toggle-others-btn').textContent = showOthers ? '▲ 隱藏其他玩家' : '▼ 顯示其他玩家';
+    }
+
     function renderPlayers() {
-      const area    = document.getElementById('players-area');
-      area.innerHTML = '';
+      const othersEl  = document.getElementById('others-area');
+      const myEl      = document.getElementById('my-area');
+      othersEl.innerHTML = '';
+      myEl.innerHTML     = '';
+
       const players = toArr(roomData.players);
       const isIdle  = roomData.phase === 'idle';
 
@@ -655,41 +689,77 @@ const firebaseConfig = {
         const isMe      = player.uid === myUid;
         const isActive  = idx === roomData.currentPlayer;
         const canDiscard= isMe && isActive && roomData.phase === 'discard';
+        const hand      = toArr(roomData.hands?.[idx] || []);
 
         const panel = document.createElement('div');
-        panel.className = `player-panel${isActive?' active':''}${isMe?' me-panel':''}`;
 
-        const nameDiv = document.createElement('div');
-        nameDiv.className = 'player-name';
-        nameDiv.innerHTML = `${player.name}
-          ${player.isDealer ? '<span class="dealer-badge">莊</span>' : ''}
-          ${isMe            ? '<span class="me-badge">你</span>'     : ''}
-          ${!player.online  ? '<span class="offline-badge">離線</span>' : ''}
-          <span style="color:#aaa;font-size:.82rem">(${player.handCount}張)</span>`;
-        panel.appendChild(nameDiv);
+        if (isMe) {
+          // ── 自己的手牌：全寬放大 ────────────────────────────
+          panel.className = `player-panel me-panel${isActive ? ' active' : ''}`;
 
-        const handDiv = document.createElement('div');
-        handDiv.className = 'hand';
-        const hand      = toArr(roomData.hands?.[idx] || []);
-        const showFace  = isMe || isIdle;
+          const nameDiv = document.createElement('div');
+          nameDiv.className = 'player-name';
+          nameDiv.innerHTML = `${player.name}
+            ${player.isDealer ? '<span class="dealer-badge">莊</span>' : ''}
+            <span class="me-badge">你</span>
+            <span style="color:#aaa;font-size:.85rem">(${hand.length}張)</span>`;
+          panel.appendChild(nameDiv);
 
-        hand.forEach(piece => {
-          const el = document.createElement('div');
-          if (showFace) {
+          const handDiv = document.createElement('div');
+          handDiv.className = 'hand large';
+          hand.forEach(piece => {
+            const el = document.createElement('div');
             const isNew = piece.id === roomData.drawnPieceId;
-            el.className = `piece ${piece.color}${canDiscard?' selectable':''}${isNew?' drawn':''}`;
+            el.className = `piece large ${piece.color}${canDiscard ? ' selectable' : ''}${isNew ? ' drawn' : ''}`;
             el.textContent = piece.type;
-            el.title = `${piece.color==='red'?'紅':'黑'}${piece.type}`;
+            el.title = `${piece.color === 'red' ? '紅' : '黑'}${piece.type}`;
             if (canDiscard) el.onclick = () => discardCard(piece.id);
-          } else {
-            el.className = 'piece hidden';
-            el.textContent = '♟';
-          }
-          handDiv.appendChild(el);
-        });
+            handDiv.appendChild(el);
+          });
 
-        panel.appendChild(handDiv);
-        area.appendChild(panel);
+          // 結局時顯示手牌說明
+          if (isIdle && hand.length > 0) {
+            const hint = document.createElement('div');
+            hint.style.cssText = 'margin-top:8px;font-size:.8rem;color:#aaa';
+            hint.textContent = '（結局揭牌）';
+            panel.appendChild(handDiv);
+            panel.appendChild(hint);
+          } else {
+            panel.appendChild(handDiv);
+          }
+
+          myEl.appendChild(panel);
+
+        } else {
+          // ── 其他玩家：緊湊小牌 ──────────────────────────────
+          panel.className = `player-panel compact${isActive ? ' active' : ''}`;
+
+          const nameDiv = document.createElement('div');
+          nameDiv.className = 'player-name';
+          nameDiv.style.fontSize = '.82rem';
+          nameDiv.innerHTML = `${player.name}
+            ${player.isDealer ? '<span class="dealer-badge">莊</span>' : ''}
+            ${!player.online  ? '<span class="offline-badge">離線</span>' : ''}
+            <span style="color:#aaa;font-size:.75rem">(${player.handCount}張)</span>`;
+          panel.appendChild(nameDiv);
+
+          const handDiv = document.createElement('div');
+          handDiv.className = 'hand';
+          const showFace = isIdle;
+          hand.forEach(piece => {
+            const el = document.createElement('div');
+            if (showFace) {
+              el.className = `piece small ${piece.color}`;
+              el.textContent = piece.type;
+            } else {
+              el.className = 'piece small hidden';
+              el.textContent = '♟';
+            }
+            handDiv.appendChild(el);
+          });
+          panel.appendChild(handDiv);
+          othersEl.appendChild(panel);
+        }
       });
     }
 
@@ -733,6 +803,7 @@ const firebaseConfig = {
 
     // ── 事件綁定 ────────────────────────────────────────────────────
 
+    document.getElementById('toggle-others-btn').onclick = toggleOthers;
     document.getElementById('create-btn').onclick  = createRoom;
     document.getElementById('join-btn').onclick    = joinRoom;
     document.getElementById('start-btn').onclick   = startGame;
