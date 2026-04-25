@@ -7,7 +7,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Noto Serif TC', '標楷體', serif;
+      font-family: '標楷體', 'DFKai-SB', serif;
       background: #2d5a1b; min-height: 100vh;
       display: flex; flex-direction: column; align-items: center;
       padding: 20px; color: white;
@@ -277,6 +277,13 @@ const firebaseConfig = {
     const TO = {'帥':0,'將':0,'仕':1,'士':1,'相':2,'象':2,'車':3,'馬':4,'炮':5,'包':5,'兵':6,'卒':6};
     const CO = {red:0,black:1};
     function sortHand(h) { h.sort((a,b)=>CO[a.color]-CO[b.color]||(TO[a.type]??9)-(TO[b.type]??9)); }
+    function pieceChar(p) {
+      if (p.color === 'red') {
+        if (p.type === '馬') return '傌';
+        if (p.type === '車') return '俥';
+      }
+      return p.type;
+    }
     function pairKey(t) { return t==='帥'?'將':t; }
     function isPair(two) { return two.length===2&&pairKey(two[0].type)===pairKey(two[1].type); }
     function combos(a,k) {
@@ -534,7 +541,7 @@ const firebaseConfig = {
 
       const newHand    = myHand.filter(p => p.id !== pieceId);
       const myDiscards = [...toArr(roomData.discards?.[myIndex] || []), discarded];
-      let log = pushLog(toArr(roomData.log), `「${players[myIndex].name}」打出「${discarded.color==='red'?'紅':'黑'}${discarded.type}」`);
+      let log = pushLog(toArr(roomData.log), `「${players[myIndex].name}」打出「${discarded.color==='red'?'紅':'黑'}${pieceChar(discarded)}」`);
 
       const upd = {};
       upd[`rooms/${myRoomId}/hands/${myIndex}`]             = newHand;
@@ -583,7 +590,7 @@ const firebaseConfig = {
       const myHand  = [...toArr(roomData.hands?.[myIndex] || []), piece];
       sortHand(myHand);
       const result  = checkWin(myHand);
-      let log = pushLog(toArr(roomData.log), `「${players[myIndex].name}」吃了「${piece.color==='red'?'紅':'黑'}${piece.type}」`);
+      let log = pushLog(toArr(roomData.log), `「${players[myIndex].name}」吃了「${piece.color==='red'?'紅':'黑'}${pieceChar(piece)}」`);
 
       const upd = {};
       upd[`rooms/${myRoomId}/discards/${fromIdx}`]          = pile;
@@ -711,8 +718,8 @@ const firebaseConfig = {
             const el = document.createElement('div');
             const isNew = piece.id === roomData.drawnPieceId;
             el.className = `piece large ${piece.color}${canDiscard ? ' selectable' : ''}${isNew ? ' drawn' : ''}`;
-            el.textContent = piece.type;
-            el.title = `${piece.color === 'red' ? '紅' : '黑'}${piece.type}`;
+            el.textContent = pieceChar(piece);
+            el.title = `${piece.color === 'red' ? '紅' : '黑'}${pieceChar(piece)}`;
             if (canDiscard) el.onclick = () => discardCard(piece.id);
             handDiv.appendChild(el);
           });
@@ -750,7 +757,7 @@ const firebaseConfig = {
             const el = document.createElement('div');
             if (showFace) {
               el.className = `piece small ${piece.color}`;
-              el.textContent = piece.type;
+              el.textContent = pieceChar(piece);
             } else {
               el.className = 'piece small hidden';
               el.textContent = '♟';
@@ -785,8 +792,8 @@ const firebaseConfig = {
             const el = document.createElement('div');
             const eatable = roomData.lastDiscard && piece.id === roomData.lastDiscard.id;
             el.className = `piece small ${piece.color}${eatable?' eatable':''}`;
-            el.textContent = piece.type;
-            el.title = `${piece.color==='red'?'紅':'黑'}${piece.type}${eatable?'（可吃）':''}`;
+            el.textContent = pieceChar(piece);
+            el.title = `${piece.color==='red'?'紅':'黑'}${pieceChar(piece)}${eatable?'（可吃）':''}`;
             row.appendChild(el);
           });
         }
