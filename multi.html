@@ -415,10 +415,7 @@
     <!-- 操作按鈕 -->
     <div class="controls">
       <button class="btn" id="draw-btn" disabled>摸牌</button>
-      <div class="eat-controls" id="eat-controls" style="display:none">
-        <button class="btn eat" id="eat-btn">吃牌</button>
-        <button class="btn secondary" id="skip-btn">跳過</button>
-      </div>
+      <button class="btn eat" id="eat-btn" style="display:none">吃牌</button>
       <div class="status-msg" id="status-msg"></div>
     </div>
 
@@ -718,6 +715,8 @@
       upd[`rooms/${myRoomId}/deck`]                        = deck;
       upd[`rooms/${myRoomId}/hands/${myIndex}`]            = myHand;
       upd[`rooms/${myRoomId}/players/${myIndex}/handCount`]= myHand.length;
+      upd[`rooms/${myRoomId}/lastDiscard`]                 = null;
+      upd[`rooms/${myRoomId}/lastDiscardPlayer`]           = -1;
 
       if (result.win) {
         log = pushLog(log, `「${players[myIndex].name}」胡牌！${result.pattern}`);
@@ -875,8 +874,8 @@
                              (isMyTurn ? '請打出一張牌'        : `等待「${curName}」打牌${dots}`);
 
       document.getElementById('deck-count').textContent = `牌堆剩餘：${toArr(roomData.deck).length} 張`;
-      document.getElementById('draw-btn').disabled = !(isMyTurn && phase==='draw');
-      document.getElementById('eat-controls').style.display = (isMyTurn && phase==='can-eat') ? 'flex' : 'none';
+      document.getElementById('draw-btn').disabled = !(isMyTurn && (phase==='draw' || phase==='can-eat'));
+      document.getElementById('eat-btn').style.display  = (isMyTurn && phase==='can-eat') ? 'inline-block' : 'none';
       document.getElementById('status-msg').textContent = (isMyTurn && phase==='discard') ? '點擊手牌打出一張' : '';
 
       // 胡牌／平局 Modal
@@ -1048,7 +1047,6 @@
     document.getElementById('start-btn').onclick   = startGame;
     document.getElementById('draw-btn').onclick    = drawCard;
     document.getElementById('eat-btn').onclick     = eatCard;
-    document.getElementById('skip-btn').onclick    = skipEat;
     document.getElementById('new-game-btn').onclick= startGame;
 
     document.getElementById('display-room-code').onclick = () => {
