@@ -151,18 +151,16 @@
   <!-- ── 大廳 ─────────────────────────────────────── -->
   <div id="lobby-screen">
     <div class="card">
-      <h2>建立新房間</h2>
+      <h2>進入遊戲</h2>
       <label style="font-size:.9rem;color:#ccc">你的名字</label>
       <input type="text" id="player-name" placeholder="輸入名字" maxlength="10">
-      <button class="btn" style="width:100%;margin-top:8px" id="create-btn">建立新房間</button>
-      <hr class="divider">
-      <h2 style="margin-bottom:12px">加入現有房間</h2>
-      <label style="font-size:.9rem;color:#ccc">你的名字</label>
-      <input type="text" id="join-name" placeholder="輸入名字" maxlength="10">
-      <label style="font-size:.9rem;color:#ccc;margin-top:4px;display:block">房間代碼</label>
-      <input type="text" id="room-code-input" placeholder="輸入 4 位數字代碼" maxlength="4"
+      <label style="font-size:.9rem;color:#ccc;display:block;margin-top:4px">房間代碼（加入時填）</label>
+      <input type="text" id="room-code-input" placeholder="留空則建立新房間" maxlength="4"
              inputmode="numeric" pattern="[0-9]*" style="letter-spacing:4px;margin-top:6px">
-      <button class="btn secondary" style="width:100%;margin-top:8px" id="join-btn">加入房間</button>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn" style="flex:1" id="create-btn">建立房間</button>
+        <button class="btn secondary" style="flex:1" id="join-btn">加入房間</button>
+      </div>
       <div class="error-msg" id="lobby-error"></div>
     </div>
   </div>
@@ -362,7 +360,7 @@ const firebaseConfig = {
     }
 
     async function joinRoom() {
-      const name = document.getElementById('join-name').value.trim() || '玩家';
+      const name = document.getElementById('player-name').value.trim() || '玩家';
       const code = document.getElementById('room-code-input').value.trim();
       if (code.length !== 4) return showLobbyErr('請輸入 4 碼代碼');
       document.getElementById('join-btn').disabled = true;
@@ -755,10 +753,9 @@ const firebaseConfig = {
       if (e.key === 'Enter') joinRoom();
     });
     document.getElementById('player-name').addEventListener('keydown', e => {
-      if (e.key === 'Enter') createRoom();
-    });
-    document.getElementById('join-name').addEventListener('keydown', e => {
-      if (e.key === 'Enter') joinRoom();
+      if (e.key === 'Enter') {
+        document.getElementById('room-code-input').value.trim().length === 4 ? joinRoom() : createRoom();
+      }
     });
   </script>
 </body>
