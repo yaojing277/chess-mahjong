@@ -566,6 +566,10 @@
       return{win:false};
     }
 
+    function getWinTai(pattern, isZiMo) {
+      return pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+    }
+
     // ── 工具 ──
 
     function toArr(v) {
@@ -769,11 +773,12 @@
       if (result.win) {
         const scores = toArr(roomData.scores || []);
         while (scores.length < players.length) scores.push(0);
-        const changes = players.map((_, i) => i === myIndex ? 3 : -1);
+        const tai = getWinTai(result.pattern, true);
+        const changes = players.map((_, i) => i === myIndex ? tai * (players.length - 1) : -tai);
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
-        log = pushLog(log, `「${players[myIndex].name}」自摸胡牌！${result.pattern}`);
+        log = pushLog(log, `「${players[myIndex].name}」自摸胡牌！${result.pattern}（${tai}台）`);
         upd[`rooms/${myRoomId}/phase`]   = 'idle';
-        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '自摸', scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '自摸', tai, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`]       = 'discard';
         upd[`rooms/${myRoomId}/drawnPieceId`]= piece.id;
@@ -816,15 +821,16 @@
         upd[`rooms/${myRoomId}/players/${winner.idx}/handCount`] = winner.hand.length;
         const scores = toArr(roomData.scores || []);
         while (scores.length < n) scores.push(0);
+        const tai = getWinTai(winner.pattern, false);
         const changes = Array(n).fill(0);
-        changes[winner.idx] = 3;
-        changes[myIndex]    = -3;
+        changes[winner.idx] = tai;
+        changes[myIndex]    = -tai;
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
-        log = pushLog(log, `「${winner.name}」以「${winner.pattern}」胡牌（放砲）！「${players[myIndex].name}」放砲`);
+        log = pushLog(log, `「${winner.name}」以「${winner.pattern}」胡牌（放砲 ${tai}台）！「${players[myIndex].name}」放砲`);
         upd[`rooms/${myRoomId}/phase`]             = 'idle';
         upd[`rooms/${myRoomId}/lastDiscard`]       = null;
         upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
-        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, winType: '放砲', discardPlayer: myIndex, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, winType: '放砲', tai, discardPlayer: myIndex, scoreChanges: changes };
       } else {
         const next = (myIndex + 1) % n;
         upd[`rooms/${myRoomId}/phase`]             = 'can-eat';
@@ -859,13 +865,14 @@
       if (result.win) {
         const scores = toArr(roomData.scores || []);
         while (scores.length < players.length) scores.push(0);
+        const tai = getWinTai(result.pattern, false);
         const changes = Array(players.length).fill(0);
-        changes[myIndex] = 3;
-        changes[fromIdx] = -3;
+        changes[myIndex] = tai;
+        changes[fromIdx] = -tai;
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
-        log = pushLog(log, `「${players[myIndex].name}」吃牌後胡牌！${result.pattern}`);
+        log = pushLog(log, `「${players[myIndex].name}」吃牌後胡牌！${result.pattern}（${tai}台）`);
         upd[`rooms/${myRoomId}/phase`]  = 'idle';
-        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '吃牌胡', sourcePlayer: fromIdx, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '吃牌胡', tai, sourcePlayer: fromIdx, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`] = 'discard';
       }
@@ -952,9 +959,9 @@
         document.getElementById('win-title').textContent = '胡牌！';
         document.getElementById('win-msg').textContent =
           w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
-        // 勝利類型
+        // 勝利類型 + 台數
         const typeBadge = document.getElementById('win-type-badge');
-        if (w.winType) { typeBadge.textContent = w.winType; typeBadge.style.display = 'inline-block'; }
+        if (w.winType) { typeBadge.textContent = `${w.winType}｜${w.tai ?? '?'}台`; typeBadge.style.display = 'inline-block'; }
         else { typeBadge.style.display = 'none'; }
         // 得分明細
         const scores = toArr(roomData.scores || []);
