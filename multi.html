@@ -82,12 +82,12 @@
       border: 2px solid transparent; transition: border-color .3s, background .3s;
     }
     .player-panel.compact { flex: 1; min-width: 0; }
-    .player-panel.active   { border-color: #ffd700; background: rgba(255,215,0,.08); }
+    .player-panel.active   { border-color: #ffd700; background: rgba(255,215,0,.08); animation: active-border-pulse 1.5s ease-in-out infinite; }
     .player-panel.me-panel {
       border-color: #4ade80; width: 100%;
       padding: 16px 20px; background: rgba(0,80,0,.25);
     }
-    .player-panel.me-panel.active { border-color: #ffd700; background: rgba(255,215,0,.12); }
+    .player-panel.me-panel.active { border-color: #ffd700; background: rgba(255,215,0,.12); animation: active-border-pulse 1.5s ease-in-out infinite; }
     .player-name {
       font-size: .95rem; margin-bottom: 10px;
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
@@ -128,6 +128,25 @@
       from { box-shadow: 0 0 8px #ffd700; }
       to   { box-shadow: 0 0 20px #ffd700, 0 0 36px #ffd70066; }
     }
+    /* ① 棄牌最後一張高亮 */
+    .piece.latest { border-color: #ffd700 !important; box-shadow: 0 0 8px rgba(255,215,0,.45); }
+    /* ② 等待動畫 – 當前玩家 panel 脈衝 */
+    @keyframes active-border-pulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(255,215,0,.5); }
+      50%     { box-shadow: 0 0 0 7px rgba(255,215,0,0); }
+    }
+    /* ② 等待動畫 – 跳動小點 */
+    .dot-anim { display:inline-flex; gap:2px; vertical-align:middle; margin-left:6px; }
+    .dot-anim span {
+      display:inline-block; width:5px; height:5px; border-radius:50%;
+      background:#ffd700; animation:dot-bounce 1.4s ease-in-out infinite;
+    }
+    .dot-anim span:nth-child(2) { animation-delay:.2s; }
+    .dot-anim span:nth-child(3) { animation-delay:.4s; }
+    @keyframes dot-bounce {
+      0%,80%,100% { transform:translateY(0); opacity:.3; }
+      40%         { transform:translateY(-5px); opacity:1; }
+    }
     .controls {
       background: rgba(0,0,0,.3); border-radius: 10px;
       padding: 14px 24px; margin-bottom: 16px; text-align: center;
@@ -162,6 +181,26 @@
     }
     .log p { margin: 2px 0; line-height: 1.4; }
     .loading { color: #aaa; font-size: 1rem; margin-top: 40px; }
+    /* ③ 手機版排版 */
+    @media (max-width: 600px) {
+      body { padding: 10px; }
+      h1 { font-size: 1.4rem; margin-bottom: 10px; }
+      .card { padding: 16px 14px; max-width: 100%; }
+      .piece.large { width: 60px; height: 60px; font-size: 1.5rem; border-width: 3px; }
+      .piece, .piece.small { width: 40px; height: 40px; font-size: .95rem; border-width: 2px; }
+      .hand.large { gap: 7px; }
+      .hand { gap: 5px; }
+      .game-info { padding: 8px 12px; }
+      #turn-info { font-size: .9rem; }
+      #deck-count { font-size: .8rem; }
+      .controls { padding: 10px 12px; }
+      .btn { padding: 9px 16px; font-size: .88rem; margin: 3px; }
+      .discard-area { padding: 10px 10px; }
+      .discard-rows { grid-template-columns: 1fr; gap: 10px; }
+      .log { font-size: .76rem; max-height: 100px; }
+      .player-panel.me-panel { padding: 12px 12px; }
+      .player-name { font-size: .85rem; }
+    }
   </style>
 </head>
 <body>
@@ -657,11 +696,12 @@ const firebaseConfig = {
       const isMyTurn= myIndex === roomData.currentPlayer;
       const curName = players[roomData.currentPlayer]?.name ?? '?';
 
-      document.getElementById('turn-info').textContent =
+      const dots = '<span class="dot-anim"><span></span><span></span><span></span></span>';
+      document.getElementById('turn-info').innerHTML =
         phase==='idle'    ? '遊戲結束' :
-        phase==='draw'    ? (isMyTurn ? '輪到你 – 摸牌'        : `等待「${curName}」摸牌…`) :
-        phase==='can-eat' ? (isMyTurn ? '輪到你 – 吃牌或跳過'  : `等待「${curName}」決定…`) :
-                             (isMyTurn ? '請打出一張牌'         : `等待「${curName}」打牌…`);
+        phase==='draw'    ? (isMyTurn ? '輪到你 – 摸牌'       : `等待「${curName}」摸牌${dots}`) :
+        phase==='can-eat' ? (isMyTurn ? '輪到你 – 吃牌或跳過' : `等待「${curName}」決定${dots}`) :
+                             (isMyTurn ? '請打出一張牌'        : `等待「${curName}」打牌${dots}`);
 
       document.getElementById('deck-count').textContent = `牌堆剩餘：${toArr(roomData.deck).length} 張`;
       document.getElementById('draw-btn').disabled = !(isMyTurn && phase==='draw');
@@ -805,10 +845,11 @@ const firebaseConfig = {
           empty.textContent = '尚無棄牌';
           piecesDiv.appendChild(empty);
         } else {
-          pile.forEach(piece => {
+          pile.forEach((piece, j) => {
             const el = document.createElement('div');
+            const isLatest = j === pile.length - 1;
             const eatable = roomData.lastDiscard && piece.id === roomData.lastDiscard.id;
-            el.className = `piece small ${piece.color}${eatable?' eatable':''}`;
+            el.className = `piece small ${piece.color}${eatable?' eatable':''}${isLatest?' latest':''}`;
             el.textContent = pieceChar(piece);
             el.title = `${piece.color==='red'?'紅':'黑'}${pieceChar(piece)}${eatable?'（可吃）':''}`;
             piecesDiv.appendChild(el);
