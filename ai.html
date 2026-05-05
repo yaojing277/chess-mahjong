@@ -278,6 +278,21 @@
     .log p { margin: 2px 0; line-height: 1.5; border-bottom: 1px solid rgba(255,255,255,.04); padding-bottom: 2px; }
     .log p:last-child { border-bottom: none; }
 
+    /* ── 積分 ── */
+    .score-badge { font-size:.72rem; color:#ffd700; background:rgba(255,215,0,.12); border:1px solid rgba(255,215,0,.22); border-radius:5px; padding:1px 6px; font-weight:bold; }
+    .score-badge.neg { color:#f87171; background:rgba(248,113,113,.1); border-color:rgba(248,113,113,.22); }
+    .win-type-badge { font-size:.82rem; color:#ffd700; letter-spacing:1px; background:rgba(255,215,0,.1); border:1px solid rgba(255,215,0,.22); border-radius:8px; padding:3px 12px; margin-bottom:12px; display:inline-block; }
+    .score-changes { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px; }
+    .score-item { background:rgba(0,0,0,.3); border-radius:8px; padding:7px 14px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:72px; border:1px solid rgba(255,255,255,.08); }
+    .score-item.positive { border-color:rgba(74,222,128,.35); background:rgba(74,222,128,.09); }
+    .score-item.negative { border-color:rgba(248,113,113,.35); background:rgba(248,113,113,.09); }
+    .score-name { font-size:.75rem; color:#aaa; white-space:nowrap; }
+    .score-delta { font-size:1.25rem; font-weight:bold; }
+    .score-item.positive .score-delta { color:#4ade80; }
+    .score-item.negative .score-delta { color:#f87171; }
+    .score-item.neutral  .score-delta { color:#888; }
+    .score-total { font-size:.8rem; color:#ffd700; }
+
     /* ── 手機版 ── */
     @media (max-width: 600px) {
       body { padding: 10px; }
@@ -304,6 +319,7 @@
     <div style="margin-top:10px">
       <button class="btn secondary" onclick="newGame()">新遊戲</button>
       <button class="btn secondary" id="reveal-btn" onclick="toggleReveal()">👁 顯示AI手牌</button>
+      <button class="btn secondary" onclick="resetScores()" style="font-size:.82rem;padding:8px 16px">重置積分</button>
     </div>
   </div>
 
@@ -326,6 +342,8 @@
       <span class="win-crown" id="win-crown">👑</span>
       <h2 class="win-title" id="win-title">胡牌！</h2>
       <p class="win-pattern" id="win-msg"></p>
+      <div class="win-type-badge" id="win-type-badge"></div>
+      <div class="score-changes" id="win-score-summary"></div>
       <button class="btn" onclick="newGame()">再來一局</button>
     </div>
   </div>
@@ -454,6 +472,23 @@
       return bestAfterEat > countPotentialWins(hand4);
     }
 
+    // ── 計分 ──────────────────────────────────────────────
+    let scores = [0, 0, 0, 0];
+
+    function getWinTai(pattern, isZiMo) {
+      return pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+    }
+
+    function scoreBadge(i) {
+      const sc = scores[i];
+      return `<span class="score-badge${sc < 0 ? ' neg' : ''}">${sc >= 0 ? '+' : ''}${sc}</span>`;
+    }
+
+    function resetScores() {
+      scores = [0, 0, 0, 0];
+      render();
+    }
+
     let aiThinking = false;
 
     function scheduleAITurn() {
@@ -531,7 +566,7 @@
         addLog(`${player.name} 自摸胡牌！${result.pattern}`);
         state.phase = 'idle';
         render();
-        showWin(player, result.pattern);
+        showWin(player, result.pattern, '自摸', -1);
       } else {
         if (!player.isAI) setStatus('請點擊手牌打出一張');
         render();
@@ -559,7 +594,7 @@
           addLog(`${cp.name} 放砲胡牌！${result.pattern}`);
           state.phase = 'idle';
           render();
-          showWin(cp, result.pattern);
+          showWin(cp, result.pattern, '放砲', playerId);
           return;
         }
       }
@@ -572,9 +607,10 @@
 
     function eatPiece() {
       if (state.phase !== 'can-eat' || !state.lastDiscard) return;
-      const piece  = state.lastDiscard;
-      const pile   = state.discards[state.lastDiscardPlayer];
-      const idx    = pile.findIndex(p => p.id === piece.id);
+      const piece     = state.lastDiscard;
+      const sourceIdx = state.lastDiscardPlayer;
+      const pile      = state.discards[sourceIdx];
+      const idx       = pile.findIndex(p => p.id === piece.id);
       if (idx !== -1) pile.splice(idx,1);
 
       const player = state.players[state.currentPlayer];
@@ -591,7 +627,7 @@
         addLog(`${player.name} 胡牌！${result.pattern}`);
         state.phase = 'idle';
         render();
-        showWin(player, result.pattern);
+        showWin(player, result.pattern, '吃牌胡', sourceIdx);
       } else {
         if (!player.isAI) setStatus('吃牌後請打出一張');
         render();
@@ -650,6 +686,7 @@
       let nameHTML = player.name;
       if (player.isDealer) nameHTML += ' <span class="dealer-badge">莊</span>';
       nameHTML += ' <span class="me-badge">你</span>';
+      nameHTML += ' ' + scoreBadge(0);
       nameHTML += ` <span style="color:#aaa;font-size:.85rem">(${player.hand.length}張)</span>`;
       nameDiv.innerHTML = nameHTML;
       panel.appendChild(nameDiv);
@@ -702,6 +739,7 @@
         } else {
           nameHTML += ' <span class="ai-badge">AI</span>';
         }
+        nameHTML += ' ' + scoreBadge(i);
         nameHTML += ` <span style="color:#aaa;font-size:.75rem">(${player.hand.length}張)</span>`;
         nameDiv.innerHTML = nameHTML;
         panel.appendChild(nameDiv);
@@ -764,10 +802,35 @@
       }
     }
 
-    function showWin(player, pattern) {
-      document.getElementById('win-crown').textContent = player.isAI ? '🤖' : '👑';
-      document.getElementById('win-title').textContent = player.isAI ? 'AI 胡牌！' : '你胡牌了！';
-      document.getElementById('win-msg').textContent   = `${player.name} 以「${pattern}」胡牌！`;
+    function showWin(player, pattern, winType, discardOrSourceIdx) {
+      const tai = getWinTai(pattern, winType === '自摸');
+      const changes = [0, 0, 0, 0];
+
+      if (winType === '自摸') {
+        changes[player.id] = tai * 3;
+        for (let i = 0; i < 4; i++) if (i !== player.id) changes[i] = -tai;
+      } else {
+        changes[player.id] = tai;
+        if (discardOrSourceIdx >= 0) changes[discardOrSourceIdx] = -tai;
+      }
+      for (let i = 0; i < 4; i++) scores[i] += changes[i];
+
+      document.getElementById('win-crown').textContent    = player.isAI ? '🤖' : '👑';
+      document.getElementById('win-title').textContent    = player.isAI ? 'AI 胡牌！' : '你胡牌了！';
+      document.getElementById('win-msg').textContent      = `${player.name} 以「${pattern}」胡牌！`;
+      document.getElementById('win-type-badge').textContent = `${winType}｜${tai}台`;
+
+      document.getElementById('win-score-summary').innerHTML =
+        state.players.map((p, i) => {
+          const ch  = changes[i];
+          const cls = ch > 0 ? 'positive' : ch < 0 ? 'negative' : 'neutral';
+          return `<div class="score-item ${cls}">
+            <span class="score-name">${p.name}</span>
+            <span class="score-delta">${ch > 0 ? '+' : ''}${ch}</span>
+            <span class="score-total">${scores[i] >= 0 ? '+' : ''}${scores[i]}台</span>
+          </div>`;
+        }).join('');
+
       document.getElementById('win-overlay').classList.add('show');
       if (!confettiLaunched) { launchConfetti(); confettiLaunched = true; }
     }
