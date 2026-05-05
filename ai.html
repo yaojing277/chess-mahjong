@@ -329,10 +329,7 @@
   <!-- 操作按鈕 -->
   <div class="controls">
     <button class="btn" id="draw-btn" disabled onclick="drawPiece()">摸牌</button>
-    <div class="eat-controls" id="eat-controls" style="display:none">
-      <button class="btn eat" onclick="eatPiece()">吃牌</button>
-      <button class="btn secondary" onclick="skipEat()">跳過</button>
-    </div>
+    <button class="btn eat" id="eat-btn" style="display:none" onclick="eatPiece()">吃牌</button>
     <div class="status-msg" id="status-msg"></div>
   </div>
 
@@ -547,6 +544,11 @@
     }
 
     function drawPiece() {
+      if (state.phase === 'can-eat') {
+        state.lastDiscard = null;
+        state.lastDiscardPlayer = -1;
+        state.phase = 'draw';
+      }
       if (state.phase !== 'draw') return;
       if (state.deck.length === 0) {
         addLog('牌堆已空，遊戲平局！');
@@ -601,7 +603,7 @@
 
       state.currentPlayer = (playerId+1)%4;
       state.phase = 'can-eat';
-      if (!state.players[state.currentPlayer].isAI) setStatus('可以選擇吃上家打出的牌');
+      setStatus('');
       render();
     }
 
@@ -656,16 +658,18 @@
         const action = state.phase==='draw' ? '摸牌中' : state.phase==='discard' ? '出牌中' : '決定是否吃牌';
         phaseLabel = `${cp.name} ${action}...`;
       } else {
-        phaseLabel = state.phase==='draw' ? '輪到你摸牌' :
-                     state.phase==='can-eat' ? '輪到你決定是否吃牌' : '請打出一張手牌';
+        phaseLabel = state.phase==='draw'    ? '輪到你 – 摸牌' :
+                     state.phase==='can-eat' ? '輪到你 – 吃牌 或 直接摸牌（跳過）' :
+                                               '輪到你 – 請打出一張手牌';
       }
       document.getElementById('turn-info').textContent = phaseLabel;
       document.getElementById('deck-count').innerHTML  = `牌堆剩餘：<span class="num">${state.deck.length}</span> 張`;
 
       const isHumanTurn = cp && !cp.isAI;
-      document.getElementById('draw-btn').disabled = state.phase !== 'draw' || !isHumanTurn;
-      document.getElementById('eat-controls').style.display =
-        (state.phase==='can-eat' && isHumanTurn) ? 'flex' : 'none';
+      document.getElementById('draw-btn').disabled =
+        !(isHumanTurn && (state.phase === 'draw' || state.phase === 'can-eat'));
+      document.getElementById('eat-btn').style.display =
+        (state.phase === 'can-eat' && isHumanTurn) ? 'inline-block' : 'none';
 
       renderDiscards();
       scheduleAITurn();
