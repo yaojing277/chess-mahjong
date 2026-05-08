@@ -1177,13 +1177,25 @@
       const rows = document.getElementById('discard-rows');
       rows.innerHTML = '';
       const canEatNow = roomData.phase === 'can-eat' && myIndex === roomData.currentPlayer;
-      toArr(roomData.players).forEach((player, i) => {
+      const players = toArr(roomData.players);
+      const n = players.length;
+      // 上家優先：從上家開始，依序顯示
+      const displayOrder = n > 1
+        ? Array.from({length: n}, (_, k) => ((myIndex - 1 + k + n) % n))
+        : [0];
+
+      displayOrder.forEach(i => {
+        const player = players[i];
+        if (!player) return;
+        const isShangJia = n > 1 && i === ((myIndex - 1 + n) % n);
         const row = document.createElement('div');
         row.className = 'discard-row';
 
         const label = document.createElement('span');
         label.className = `discard-label discard-label-${i}`;
-        label.textContent = player.name;
+        label.innerHTML = player.name + (isShangJia
+          ? ' <span style="background:rgba(251,146,60,.25);color:#fb923c;border:1px solid rgba(251,146,60,.4);border-radius:4px;font-size:.6rem;padding:1px 5px;margin-left:3px">上家</span>'
+          : '');
         row.appendChild(label);
 
         const piecesDiv = document.createElement('div');
