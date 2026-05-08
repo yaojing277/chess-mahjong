@@ -36,6 +36,21 @@
     #deck-count { color: #888; font-size: .88rem; margin-top: 4px; }
     #deck-count .num { color: #ffd700; font-size: 1.1rem; font-weight: bold; margin: 0 2px; }
 
+    /* ── 積分彈窗 ── */
+    .score-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .score-modal-overlay.show { display: flex; animation: win-slide-in .25s ease-out; }
+    .score-modal {
+      background: linear-gradient(160deg, #1a3a08 0%, #2d5a1b 100%);
+      border: 2px solid #ffd700; border-radius: 16px;
+      padding: 24px 28px; text-align: center;
+      box-shadow: 0 0 40px rgba(255,215,0,.2), 0 8px 32px rgba(0,0,0,.6);
+      min-width: 280px;
+    }
+
     /* ── 圖示按鈕（頂部工具列） ── */
     .icon-btn {
       background: rgba(255,255,255,.05);
@@ -336,23 +351,31 @@
   <div class="game-info">
     <div id="turn-info">點擊「新遊戲」開始</div>
     <div id="deck-count">牌堆：<span class="num">32</span> 張</div>
-    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">
-      <button class="icon-btn" onclick="newGame()" title="新遊戲">
-        <span class="icon-btn-icon">🎮</span>
-        <span class="icon-btn-label">新遊戲</span>
-      </button>
-      <button class="icon-btn" id="reveal-btn" onclick="toggleReveal()" title="顯示／隱藏AI手牌">
-        <span class="icon-btn-icon">👁</span>
-        <span class="icon-btn-label">看AI牌</span>
-      </button>
-      <button class="icon-btn" onclick="resetScores()" title="重置所有積分">
-        <span class="icon-btn-icon">🏳️</span>
-        <span class="icon-btn-label">重置積分</span>
-      </button>
-      <button class="icon-btn" onclick="location.reload()" title="重新整理頁面">
-        <span class="icon-btn-icon">🔄</span>
-        <span class="icon-btn-label">重新整理</span>
-      </button>
+    <div style="display:flex;flex-direction:column;gap:8px;align-items:center;margin-top:12px">
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="icon-btn" onclick="newGame()" title="新遊戲">
+          <span class="icon-btn-icon">🎮</span>
+          <span class="icon-btn-label">新遊戲</span>
+        </button>
+        <button class="icon-btn" onclick="showScores()" title="查看積分">
+          <span class="icon-btn-icon">📊</span>
+          <span class="icon-btn-label">查看積分</span>
+        </button>
+        <button class="icon-btn" onclick="location.reload()" title="重新整理頁面">
+          <span class="icon-btn-icon">🔄</span>
+          <span class="icon-btn-label">重新整理</span>
+        </button>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="icon-btn" id="reveal-btn" onclick="toggleReveal()" title="顯示／隱藏AI手牌">
+          <span class="icon-btn-icon">👁</span>
+          <span class="icon-btn-label">看AI牌</span>
+        </button>
+        <button class="icon-btn" onclick="resetScores()" title="重置所有積分">
+          <span class="icon-btn-icon">🏳️</span>
+          <span class="icon-btn-label">重置積分</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -387,6 +410,16 @@
   <!-- AI 玩家（可折疊） -->
   <button class="toggle-others" id="toggle-others-btn" onclick="toggleOthers()">▼ 顯示 AI 玩家手牌</button>
   <div class="others-row" id="others-area" style="display:none"></div>
+
+  <!-- 積分彈窗 -->
+  <div class="score-modal-overlay" id="score-modal" onclick="closeScoreModal()">
+    <div class="score-modal" onclick="event.stopPropagation()">
+      <div style="font-size:1.8rem;margin-bottom:6px">📊</div>
+      <h3 style="color:#ffd700;margin-bottom:16px;letter-spacing:3px;font-size:1.1rem">當前積分</h3>
+      <div id="score-modal-content" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px"></div>
+      <button class="btn" onclick="closeScoreModal()">關閉</button>
+    </div>
+  </div>
 
   <!-- 紀錄 -->
   <div class="log" id="log"></div>
@@ -916,6 +949,26 @@
       document.getElementById('toggle-others-btn').textContent =
         showOthers ? '▲ 隱藏 AI 玩家手牌' : '▼ 顯示 AI 玩家手牌';
       renderOthersArea();
+    }
+
+    function showScores() {
+      const content = document.getElementById('score-modal-content');
+      content.innerHTML = state.players.length
+        ? state.players.map((p, i) => {
+            const sc = scores[i];
+            const cls = sc > 0 ? 'positive' : sc < 0 ? 'negative' : 'neutral';
+            return `<div class="score-item ${cls}">
+              <span class="score-name">${p.name}</span>
+              <span class="score-delta">${sc >= 0 ? '+' : ''}${sc}</span>
+              <span class="score-total">台</span>
+            </div>`;
+          }).join('')
+        : `<div style="grid-column:1/-1;color:#888;padding:12px">尚未開始遊戲</div>`;
+      document.getElementById('score-modal').classList.add('show');
+    }
+
+    function closeScoreModal() {
+      document.getElementById('score-modal').classList.remove('show');
     }
 
     function toggleReveal() {
