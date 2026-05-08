@@ -444,6 +444,21 @@
     .icon-btn:hover { border-color: rgba(255,215,0,.55); background: rgba(255,215,0,.08); color: #ffd700; transform: translateY(-2px); }
     .icon-btn:active { transform: translateY(0); }
 
+    /* ── 積分彈窗 ── */
+    .score-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .score-modal-overlay.show { display: flex; animation: win-slide-in .25s ease-out; }
+    .score-modal {
+      background: linear-gradient(160deg, #1a3a08 0%, #2d5a1b 100%);
+      border: 2px solid #ffd700; border-radius: 16px;
+      padding: 24px 28px; text-align: center;
+      box-shadow: 0 0 40px rgba(255,215,0,.2), 0 8px 32px rgba(0,0,0,.6);
+      min-width: 280px;
+    }
+
     /* ── 手機版 ── */
     @media (max-width: 600px) {
       body { padding: 10px; }
@@ -478,9 +493,23 @@
       <span style="font-size:1.2rem">☰</span>
     </button>
     <div class="toolbar-menu" id="toolbar-menu">
+      <button class="toolbar-item" onclick="showScores();closeToolbar()">
+        <span class="toolbar-item-icon">📊</span>查看積分
+      </button>
+      <div class="toolbar-divider"></div>
       <button class="toolbar-item" onclick="location.reload()">
         <span class="toolbar-item-icon">🔄</span>重新整理
       </button>
+    </div>
+  </div>
+
+  <!-- 積分彈窗 -->
+  <div class="score-modal-overlay" id="score-modal" onclick="closeScoreModal()">
+    <div class="score-modal" onclick="event.stopPropagation()">
+      <div style="font-size:1.8rem;margin-bottom:6px">📊</div>
+      <h3 style="color:#ffd700;margin-bottom:16px;letter-spacing:3px;font-size:1.1rem">當前積分</h3>
+      <div id="score-modal-content" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px"></div>
+      <button class="btn" onclick="closeScoreModal()">關閉</button>
     </div>
   </div>
 
@@ -668,6 +697,29 @@
       const w = document.querySelector('.toolbar-wrapper');
       if (w && !w.contains(e.target)) closeToolbar();
     });
+
+    function showScores() {
+      const content = document.getElementById('score-modal-content');
+      if (!roomData) {
+        content.innerHTML = '<div style="grid-column:1/-1;color:#888;padding:12px">尚未開始遊戲</div>';
+      } else {
+        const players = toArr(roomData.players);
+        const scores  = toArr(roomData.scores || []);
+        content.innerHTML = players.map((p, i) => {
+          const sc  = scores[i] ?? 0;
+          const cls = sc > 0 ? 'positive' : sc < 0 ? 'negative' : 'neutral';
+          return `<div class="score-item ${cls}">
+            <span class="score-name">${p.name}${p.uid === myUid ? ' (你)' : ''}</span>
+            <span class="score-delta">${sc >= 0 ? '+' : ''}${sc}</span>
+            <span class="score-total">台</span>
+          </div>`;
+        }).join('');
+      }
+      document.getElementById('score-modal').classList.add('show');
+    }
+    function closeScoreModal() {
+      document.getElementById('score-modal').classList.remove('show');
+    }
 
     let scorePanelOpen = false;
 
