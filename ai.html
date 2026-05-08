@@ -771,14 +771,16 @@
       const rows = document.getElementById('discard-rows');
       rows.innerHTML = '';
       const canEatNow = state.phase==='can-eat' && state.currentPlayer===0;
+      const displayOrder = [3, 0, 1, 2]; // 上家（Player3）優先顯示
 
-      for (let i=0; i<4; i++) {
+      for (const i of displayOrder) {
         const row = document.createElement('div');
         row.className = 'discard-row';
 
         const label = document.createElement('span');
         label.className = `discard-label discard-label-${i}`;
-        label.textContent = state.players.length ? state.players[i].name : `玩家${i+1}`;
+        const playerName = state.players.length ? state.players[i].name : `玩家${i+1}`;
+        label.innerHTML = playerName + (i === 3 ? ' <span style="background:rgba(251,146,60,.25);color:#fb923c;border:1px solid rgba(251,146,60,.4);border-radius:4px;font-size:.6rem;padding:1px 5px;margin-left:3px">上家</span>' : '');
         row.appendChild(label);
 
         const piecesDiv = document.createElement('div');
