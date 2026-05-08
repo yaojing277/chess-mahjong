@@ -583,6 +583,7 @@
     }
     function checkWin(hand) {
       if(hand.length!==5) return{win:false};
+      const withBonus = r => ({...r, allSameColor: hand.every(p => p.color === hand[0].color)});
       const trios=[
         {color:'red',  types:['帥','仕','相'],label:'紅帥+仕+相'},
         {color:'black',types:['將','士','象'],label:'黑將+士+象'},
@@ -594,24 +595,26 @@
         if(trio.some(p=>!p))continue;
         const ids=new Set(trio.map(p=>p.id));
         const rest=hand.filter(p=>!ids.has(p.id));
-        if(isPair(rest))return{win:true,pattern:`${label} + 對子（${rest[0].type}）`};
+        if(isPair(rest))return withBonus({win:true,pattern:`${label} + 對子（${rest[0].type}）`});
       }
       for(const[type,color,label]of[['卒','black','黑卒'],['兵','red','紅兵']]){
         const pawns=hand.filter(p=>p.type===type&&p.color===color);
-        if(pawns.length===5)return{win:true,pattern:`五${label}`};
+        if(pawns.length===5)return withBonus({win:true,pattern:`五${label}`});
         if(pawns.length>=3){
           for(const trio of combos(pawns,3)){
             const ids=new Set(trio.map(p=>p.id));
             const rest=hand.filter(p=>!ids.has(p.id));
-            if(isPair(rest))return{win:true,pattern:`三${label} + 對子（${rest[0].type}）`};
+            if(isPair(rest))return withBonus({win:true,pattern:`三${label} + 對子（${rest[0].type}）`});
           }
         }
       }
       return{win:false};
     }
 
-    function getWinTai(pattern, isZiMo) {
-      return pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+    function getWinTai(pattern, isZiMo, allSameColor) {
+      let tai = pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+      if (allSameColor) tai += 1;
+      return tai;
     }
 
     let scorePanelOpen = false;
@@ -844,12 +847,12 @@
       if (result.win) {
         const scores = toArr(roomData.scores || []);
         while (scores.length < players.length) scores.push(0);
-        const tai = getWinTai(result.pattern, true);
+        const tai = getWinTai(result.pattern, true, result.allSameColor);
         const changes = players.map((_, i) => i === myIndex ? tai * (players.length - 1) : -tai);
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
         log = pushLog(log, `「${players[myIndex].name}」自摸胡牌！${result.pattern}（${tai}台）`);
         upd[`rooms/${myRoomId}/phase`]   = 'idle';
-        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '自摸', tai, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, allSameColor: result.allSameColor, winType: '自摸', tai, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`]       = 'discard';
         upd[`rooms/${myRoomId}/drawnPieceId`]= piece.id;
@@ -892,7 +895,8 @@
         upd[`rooms/${myRoomId}/players/${winner.idx}/handCount`] = winner.hand.length;
         const scores = toArr(roomData.scores || []);
         while (scores.length < n) scores.push(0);
-        const tai = getWinTai(winner.pattern, false);
+        const winRes = checkWin(winner.hand);
+        const tai = getWinTai(winner.pattern, false, winRes.allSameColor);
         const changes = Array(n).fill(0);
         changes[winner.idx] = tai;
         changes[myIndex]    = -tai;
@@ -901,7 +905,7 @@
         upd[`rooms/${myRoomId}/phase`]             = 'idle';
         upd[`rooms/${myRoomId}/lastDiscard`]       = null;
         upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
-        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, winType: '放砲', tai, discardPlayer: myIndex, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, allSameColor: winRes.allSameColor, winType: '放砲', tai, discardPlayer: myIndex, scoreChanges: changes };
       } else {
         const next = (myIndex + 1) % n;
         upd[`rooms/${myRoomId}/phase`]             = 'can-eat';
@@ -936,14 +940,14 @@
       if (result.win) {
         const scores = toArr(roomData.scores || []);
         while (scores.length < players.length) scores.push(0);
-        const tai = getWinTai(result.pattern, false);
+        const tai = getWinTai(result.pattern, false, result.allSameColor);
         const changes = Array(players.length).fill(0);
         changes[myIndex] = tai;
         changes[fromIdx] = -tai;
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
         log = pushLog(log, `「${players[myIndex].name}」吃牌後胡牌！${result.pattern}（${tai}台）`);
         upd[`rooms/${myRoomId}/phase`]  = 'idle';
-        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '吃牌胡', tai, sourcePlayer: fromIdx, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, allSameColor: result.allSameColor, winType: '吃牌胡', tai, sourcePlayer: fromIdx, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`] = 'discard';
       }
@@ -1028,12 +1032,14 @@
         const w = roomData.winner;
         document.getElementById('win-crown').textContent = '👑';
         document.getElementById('win-title').textContent = '胡牌！';
+        const patternLabel = w.pattern + (w.allSameColor ? ' ＋清一色' : '');
         document.getElementById('win-msg').textContent =
-          w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
-        // 勝利類型 + 台數
+          w.playerIndex === myIndex ? `你以「${patternLabel}」胡牌！` : `「${w.playerName}」以「${patternLabel}」胡牌！`;
         const typeBadge = document.getElementById('win-type-badge');
-        if (w.winType) { typeBadge.textContent = `${w.winType}｜${w.tai ?? '?'}台`; typeBadge.style.display = 'inline-block'; }
-        else { typeBadge.style.display = 'none'; }
+        if (w.winType) {
+          typeBadge.textContent = `${w.winType}｜${w.tai ?? '?'}台` + (w.allSameColor ? '（同色+1）' : '');
+          typeBadge.style.display = 'inline-block';
+        } else { typeBadge.style.display = 'none'; }
         // 得分明細
         const scores = toArr(roomData.scores || []);
         const summaryEl = document.getElementById('win-score-summary');
