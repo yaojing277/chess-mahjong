@@ -555,6 +555,7 @@
         addLog('牌堆已空，遊戲平局！');
         state.phase = 'idle';
         render();
+        showDraw();
         return;
       }
       const piece  = state.deck.pop();
@@ -807,6 +808,22 @@
         row.appendChild(piecesDiv);
         rows.appendChild(row);
       }
+    }
+
+    function showDraw() {
+      document.getElementById('win-crown').textContent    = '🤝';
+      document.getElementById('win-title').textContent    = '平局！';
+      document.getElementById('win-msg').textContent      = '牌堆已空，無人胡牌';
+      document.getElementById('win-type-badge').textContent = '流局｜積分不變';
+      document.getElementById('win-score-summary').innerHTML =
+        state.players.map((p, i) =>
+          `<div class="score-item neutral">
+            <span class="score-name">${p.name}</span>
+            <span class="score-delta" style="color:#888">±0</span>
+            <span class="score-total">${scores[i] >= 0 ? '+' : ''}${scores[i]}台</span>
+          </div>`
+        ).join('');
+      document.getElementById('win-overlay').classList.add('show');
     }
 
     function showWin(player, pattern, winType, discardOrSourceIdx) {
