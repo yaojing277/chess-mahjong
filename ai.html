@@ -36,6 +36,26 @@
     #deck-count { color: #888; font-size: .88rem; margin-top: 4px; }
     #deck-count .num { color: #ffd700; font-size: 1.1rem; font-weight: bold; margin: 0 2px; }
 
+    /* ── 圖示按鈕（頂部工具列） ── */
+    .icon-btn {
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,215,0,.2);
+      border-radius: 10px; color: #bbb;
+      cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      padding: 8px 16px; font-family: inherit;
+      transition: all .18s; min-width: 68px;
+    }
+    .icon-btn:hover {
+      border-color: rgba(255,215,0,.55);
+      background: rgba(255,215,0,.08);
+      color: #ffd700; transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    }
+    .icon-btn:active { transform: translateY(0); }
+    .icon-btn-icon  { font-size: 1.45rem; line-height: 1; }
+    .icon-btn-label { font-size: .68rem; white-space: nowrap; letter-spacing: .5px; }
+
     /* ── 按鈕 ── */
     .btn {
       background: linear-gradient(180deg, #ffe566 0%, #ffd700 55%, #c8930a 100%);
@@ -316,11 +336,23 @@
   <div class="game-info">
     <div id="turn-info">點擊「新遊戲」開始</div>
     <div id="deck-count">牌堆：<span class="num">32</span> 張</div>
-    <div style="margin-top:10px">
-      <button class="btn secondary" onclick="newGame()">新遊戲</button>
-      <button class="btn secondary" id="reveal-btn" onclick="toggleReveal()">👁 顯示AI手牌</button>
-      <button class="btn secondary" onclick="resetScores()" style="font-size:.82rem;padding:8px 16px">重置積分</button>
-      <button class="btn secondary" onclick="location.reload()" title="重新整理頁面" style="padding:8px 14px;font-size:1.1rem">🔄</button>
+    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px">
+      <button class="icon-btn" onclick="newGame()" title="新遊戲">
+        <span class="icon-btn-icon">🎮</span>
+        <span class="icon-btn-label">新遊戲</span>
+      </button>
+      <button class="icon-btn" id="reveal-btn" onclick="toggleReveal()" title="顯示／隱藏AI手牌">
+        <span class="icon-btn-icon">👁</span>
+        <span class="icon-btn-label">看AI牌</span>
+      </button>
+      <button class="icon-btn" onclick="resetScores()" title="重置所有積分">
+        <span class="icon-btn-icon">🏳️</span>
+        <span class="icon-btn-label">重置積分</span>
+      </button>
+      <button class="icon-btn" onclick="location.reload()" title="重新整理頁面">
+        <span class="icon-btn-icon">🔄</span>
+        <span class="icon-btn-label">重新整理</span>
+      </button>
     </div>
   </div>
 
@@ -888,7 +920,9 @@
 
     function toggleReveal() {
       revealAll = !revealAll;
-      document.getElementById('reveal-btn').textContent = revealAll ? '👁 隱藏AI手牌' : '👁 顯示AI手牌';
+      const btn = document.getElementById('reveal-btn');
+      btn.querySelector('.icon-btn-icon').textContent  = revealAll ? '🙈' : '👁';
+      btn.querySelector('.icon-btn-label').textContent = revealAll ? '隱藏牌' : '看AI牌';
       render();
     }
 
