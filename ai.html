@@ -27,8 +27,8 @@
     /* ── 資訊列 ── */
     .game-info {
       background: rgba(0,0,0,.4); border: 1px solid rgba(255,215,0,.18);
-      border-radius: 12px; padding: 7px 16px;
-      margin-bottom: 10px; width: 100%; max-width: 840px;
+      border-radius: 10px; padding: 5px 16px;
+      margin-bottom: 8px; width: 100%; max-width: 840px;
       text-align: center;
       box-shadow: 0 4px 16px rgba(0,0,0,.3);
     }
@@ -72,22 +72,22 @@
     .icon-btn-label { font-size: .68rem; white-space: nowrap; letter-spacing: .5px; }
 
     /* ── 工具列下拉選單 ── */
-    .toolbar-wrapper { position: relative; display: inline-block; }
+    .toolbar-wrapper {
+      position: fixed; top: 12px; left: 12px; z-index: 70;
+    }
     .toolbar-menu {
       display: none; position: absolute;
-      left: 50%; transform: translateX(-50%);
-      top: calc(100% + 8px); z-index: 60;
+      left: 0; top: calc(100% + 6px); z-index: 80;
       background: rgba(15,35,8,.97);
       border: 1px solid rgba(255,215,0,.35);
       border-radius: 12px; padding: 6px;
       min-width: 160px;
       box-shadow: 0 10px 28px rgba(0,0,0,.7);
-      animation: toolbar-fade-in .15s ease-out;
     }
-    .toolbar-menu.open { display: block; }
+    .toolbar-menu.open { display: block; animation: toolbar-fade-in .15s ease-out; }
     @keyframes toolbar-fade-in {
-      from { opacity:0; transform: translateX(-50%) translateY(-6px); }
-      to   { opacity:1; transform: translateX(-50%) translateY(0); }
+      from { opacity:0; transform: translateY(-6px); }
+      to   { opacity:1; transform: translateY(0); }
     }
     .toolbar-item {
       display: flex; align-items: center; gap: 10px;
@@ -231,10 +231,10 @@
     /* ── 操作區 ── */
     .controls {
       background: rgba(0,0,0,.35); border: 1px solid rgba(255,255,255,.07);
-      border-radius: 12px; padding: 8px 24px; margin-bottom: 10px;
+      border-radius: 10px; padding: 5px 16px; margin-bottom: 8px;
       text-align: center; width: 100%; max-width: 840px;
     }
-    .status-msg { font-size: 1rem; margin-top: 8px; min-height: 1.4rem; color: #ffd700; font-weight: bold; }
+    .status-msg { font-size: .9rem; margin-top: 4px; min-height: 1.2rem; color: #ffd700; font-weight: bold; }
     .eat-controls { margin-top: 10px; display: flex; gap: 8px; justify-content: center; }
 
     /* ── 胡牌橫幅 ── */
@@ -378,36 +378,35 @@
 <body>
   <h1>◈ 象棋麻將 vs AI ◈</h1>
 
+  <!-- 左上角固定選單 -->
+  <div class="toolbar-wrapper">
+    <button class="icon-btn" onclick="toggleToolbar()" title="工具選單" style="padding:6px 12px;min-width:unset">
+      <span class="icon-btn-icon" style="font-size:1.2rem">☰</span>
+    </button>
+    <div class="toolbar-menu" id="toolbar-menu">
+      <button class="toolbar-item" onclick="newGame();closeToolbar()">
+        <span class="toolbar-item-icon">🎮</span>新遊戲
+      </button>
+      <button class="toolbar-item" onclick="showScores();closeToolbar()">
+        <span class="toolbar-item-icon">📊</span>查看積分
+      </button>
+      <div class="toolbar-divider"></div>
+      <button class="toolbar-item" id="reveal-btn" onclick="toggleReveal()">
+        <span class="toolbar-item-icon" id="reveal-icon">👁</span><span id="reveal-label">看AI牌</span>
+      </button>
+      <button class="toolbar-item" onclick="resetScores();closeToolbar()">
+        <span class="toolbar-item-icon">🏳️</span>重置積分
+      </button>
+      <div class="toolbar-divider"></div>
+      <button class="toolbar-item" onclick="location.reload()">
+        <span class="toolbar-item-icon">🔄</span>重新整理
+      </button>
+    </div>
+  </div>
+
   <div class="game-info">
     <div id="turn-info">點擊「新遊戲」開始</div>
     <div id="deck-count">牌堆：<span class="num">32</span> 張</div>
-    <div style="margin-top:8px">
-      <div class="toolbar-wrapper">
-        <button class="icon-btn" onclick="toggleToolbar()" title="工具選單">
-          <span class="icon-btn-icon">☰</span>
-          <span class="icon-btn-label">選單</span>
-        </button>
-        <div class="toolbar-menu" id="toolbar-menu">
-          <button class="toolbar-item" onclick="newGame();closeToolbar()">
-            <span class="toolbar-item-icon">🎮</span>新遊戲
-          </button>
-          <button class="toolbar-item" onclick="showScores();closeToolbar()">
-            <span class="toolbar-item-icon">📊</span>查看積分
-          </button>
-          <div class="toolbar-divider"></div>
-          <button class="toolbar-item" id="reveal-btn" onclick="toggleReveal()">
-            <span class="toolbar-item-icon" id="reveal-icon">👁</span><span id="reveal-label">看AI牌</span>
-          </button>
-          <button class="toolbar-item" onclick="resetScores();closeToolbar()">
-            <span class="toolbar-item-icon">🏳️</span>重置積分
-          </button>
-          <div class="toolbar-divider"></div>
-          <button class="toolbar-item" onclick="location.reload()">
-            <span class="toolbar-item-icon">🔄</span>重新整理
-          </button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- 自己的手牌 -->
@@ -415,8 +414,8 @@
 
   <!-- 操作按鈕 -->
   <div class="controls">
-    <button class="btn" id="draw-btn" disabled onclick="drawPiece()" style="padding:7px 24px">摸牌</button>
-    <button class="btn eat" id="eat-btn" style="display:none;padding:7px 24px" onclick="eatPiece()">吃牌</button>
+    <button class="btn" id="draw-btn" disabled onclick="drawPiece()" style="padding:5px 20px;font-size:.92rem">摸牌</button>
+    <button class="btn eat" id="eat-btn" style="display:none;padding:5px 20px;font-size:.92rem" onclick="eatPiece()">吃牌</button>
     <div class="status-msg" id="status-msg"></div>
   </div>
 
