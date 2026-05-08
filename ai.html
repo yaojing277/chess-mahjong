@@ -184,7 +184,7 @@
 
     /* ── 棋子 ── */
     .hand { display: flex; flex-wrap: wrap; gap: 7px; }
-    .hand.large { gap: 10px; }
+    .hand.large { gap: 8px; flex-wrap: nowrap; }
     .piece {
       width: 50px; height: 50px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
@@ -192,7 +192,7 @@
       transition: transform .18s, box-shadow .18s;
       user-select: none;
     }
-    .piece.large { width: 80px; height: 80px; font-size: 2rem; border-radius: 16px; }
+    .piece.large { width: 66px; height: 66px; font-size: 1.7rem; border-radius: 14px; }
     .piece.small { width: 44px; height: 44px; font-size: 1rem; border-radius: 10px; }
     .piece.red {
       background: linear-gradient(160deg, #e83030 0%, #aa0000 55%, #800000 100%);
@@ -362,7 +362,7 @@
     @media (max-width: 600px) {
       body { padding: 10px; }
       h1 { font-size: 1.5rem; letter-spacing: 3px; }
-      .piece.large { width: 62px; height: 62px; font-size: 1.55rem; border-radius: 12px; }
+      .piece.large { width: 54px; height: 54px; font-size: 1.35rem; border-radius: 11px; }
       .piece, .piece.small { width: 38px; height: 38px; font-size: .88rem; border-radius: 8px; }
       .hand.large { gap: 6px; }
       .hand { gap: 5px; }
