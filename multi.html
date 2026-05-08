@@ -127,49 +127,69 @@
     #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; }
     .game-info {
       background: rgba(0,0,0,.4); border: 1px solid rgba(255,215,0,.18);
-      border-radius: 12px; padding: 12px 24px;
-      margin-bottom: 16px; width: 100%; max-width: 840px;
-      box-shadow: 0 4px 16px rgba(0,0,0,.3);
-      display: flex; align-items: center; position: relative;
+      border-radius: 10px; padding: 5px 16px;
+      margin-bottom: 8px; width: 100%; max-width: 840px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.3); text-align: center;
     }
-    .game-info-center { flex: 1; text-align: center; }
     #turn-info { font-size: 1.1rem; color: #ffd700; font-weight: bold; }
     #deck-count { color: #888; font-size: .88rem; margin-top: 4px; }
-    .score-btn {
-      background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.28);
-      color: #ffd700; border-radius: 8px; padding: 6px 12px;
-      cursor: pointer; font-size: .82rem; font-family: inherit;
-      transition: background .2s, border-color .2s; white-space: nowrap;
-      flex-shrink: 0;
+    /* ── 工具列下拉選單 ── */
+    .toolbar-wrapper {
+      position: fixed; top: 12px; left: 12px; z-index: 70;
     }
-    .score-btn:hover { background: rgba(255,215,0,.22); border-color: rgba(255,215,0,.55); }
-    .score-popup {
-      position: absolute; right: 0; top: calc(100% + 8px);
-      background: rgba(8,18,4,.97); border: 1px solid rgba(255,215,0,.32);
-      border-radius: 12px; padding: 14px 18px; z-index: 20;
-      min-width: 190px;
-      box-shadow: 0 8px 28px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.05);
-      animation: popup-in .15s ease-out;
+    .toolbar-menu {
+      display: none; position: absolute;
+      left: 0; top: calc(100% + 6px); z-index: 80;
+      background: rgba(15,35,8,.97);
+      border: 1px solid rgba(255,215,0,.35);
+      border-radius: 12px; padding: 6px; min-width: 160px;
+      box-shadow: 0 10px 28px rgba(0,0,0,.7);
     }
-    @keyframes popup-in {
-      from { transform: translateY(-6px) scale(.97); opacity: 0; }
-      to   { transform: translateY(0) scale(1); opacity: 1; }
+    .toolbar-menu.open { display: block; animation: toolbar-fade-in .15s ease-out; }
+    @keyframes toolbar-fade-in {
+      from { opacity:0; transform: translateY(-6px); }
+      to   { opacity:1; transform: translateY(0); }
     }
-    .score-popup h4 {
-      font-size: .78rem; color: #666; letter-spacing: 2px;
-      margin-bottom: 10px; text-align: center;
+    .toolbar-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 14px; border-radius: 8px;
+      color: #ccc; cursor: pointer; font-family: inherit;
+      background: transparent; border: none; width: 100%;
+      text-align: left; font-size: .92rem;
+      transition: background .14s, color .14s;
     }
-    .score-popup-row {
-      display: flex; align-items: center; gap: 8px;
-      padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.06);
-      font-size: .9rem;
+    .toolbar-item:hover { background: rgba(255,215,0,.1); color: #ffd700; }
+    .toolbar-item-icon { font-size: 1.1rem; width: 1.4rem; text-align: center; }
+    .toolbar-item:disabled { color: #555; cursor: not-allowed; }
+    .toolbar-item:disabled:hover { background: transparent; color: #555; }
+    .toolbar-divider { height: 1px; background: rgba(255,255,255,.08); margin: 4px 6px; }
+    .icon-btn {
+      background: rgba(255,255,255,.05); border: 1px solid rgba(255,215,0,.2);
+      border-radius: 10px; color: #bbb; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 6px 12px; font-family: inherit; transition: all .18s;
     }
-    .score-popup-row:last-child { border-bottom: none; }
-    .score-popup-name { flex: 1; }
-    .score-popup-val { font-weight: bold; font-size: 1rem; min-width: 38px; text-align: right; }
-    .score-popup-val.pos  { color: #4ade80; }
-    .score-popup-val.neg  { color: #f87171; }
-    .score-popup-val.zero { color: #666; }
+    .icon-btn:hover {
+      border-color: rgba(255,215,0,.55); background: rgba(255,215,0,.08);
+      color: #ffd700; transform: translateY(-2px);
+    }
+    .icon-btn:active { transform: translateY(0); }
+
+    /* ── 積分彈窗 ── */
+    .score-modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    .score-modal-overlay.show { display: flex; animation: win-slide-in .25s ease-out; }
+    .score-modal {
+      background: linear-gradient(160deg, #1a3a08 0%, #2d5a1b 100%);
+      border: 2px solid #ffd700; border-radius: 16px;
+      padding: 24px 28px; text-align: center;
+      box-shadow: 0 0 40px rgba(255,215,0,.2), 0 8px 32px rgba(0,0,0,.6);
+      min-width: 280px;
+    }
+
     #deck-count .num {
       color: #ffd700; font-size: 1.15rem; font-weight: bold;
       text-shadow: 0 0 8px rgba(255,215,0,.6);
@@ -205,7 +225,7 @@
 
     /* ── 棋子 ── */
     .hand { display: flex; flex-wrap: wrap; gap: 6px; }
-    .hand.large { gap: 10px; }
+    .hand.large { gap: 8px; flex-wrap: nowrap; }
     .piece {
       width: 52px; height: 52px; border-radius: 12px;
       display: flex; align-items: center; justify-content: center;
@@ -213,7 +233,7 @@
       transition: transform .18s, box-shadow .18s;
       user-select: none; position: relative;
     }
-    .piece.large { width: 80px; height: 80px; font-size: 2rem; border-radius: 16px; }
+    .piece.large { width: 66px; height: 66px; font-size: 1.7rem; border-radius: 14px; }
     .piece.red {
       background: linear-gradient(160deg, #e83030 0%, #aa0000 55%, #800000 100%);
       color: #fff;
@@ -382,8 +402,9 @@
 
     /* ── 計分 ── */
     .score-changes {
-      display: flex; gap: 8px; justify-content: center;
-      flex-wrap: wrap; margin-bottom: 14px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+      margin-bottom: 14px; max-width: 320px; width: 100%;
+      margin-left: auto; margin-right: auto;
     }
     .score-item {
       background: rgba(0,0,0,.3); border-radius: 8px;
@@ -400,9 +421,10 @@
     .score-item.neutral  .score-delta { color: #888; }
     .score-total { font-size: .8rem; color: #ffd700; }
     .win-type-badge {
-      font-size: .82rem; color: #ffd700; letter-spacing: 1px;
-      background: rgba(255,215,0,.1); border: 1px solid rgba(255,215,0,.22);
-      border-radius: 8px; padding: 3px 12px; margin-bottom: 12px; display: inline-block;
+      font-size: 1.25rem; font-weight: bold; color: #ffd700; letter-spacing: 3px;
+      background: rgba(255,215,0,.15); border: 2px solid rgba(255,215,0,.5);
+      border-radius: 10px; padding: 8px 24px; margin-bottom: 14px; display: inline-block;
+      text-shadow: 0 0 12px rgba(255,215,0,.6); box-shadow: 0 0 16px rgba(255,215,0,.15);
     }
     .score-badge {
       font-size: .72rem; color: #ffd700;
@@ -416,7 +438,7 @@
       body { padding: 10px; }
       h1 { font-size: 1.5rem; margin-bottom: 12px; letter-spacing: 3px; }
       .card { padding: 16px 14px; max-width: 100%; }
-      .piece.large { width: 64px; height: 64px; font-size: 1.6rem; border-radius: 12px; }
+      .piece.large { width: 54px; height: 54px; font-size: 1.35rem; border-radius: 11px; }
       .piece, .piece.small { width: 40px; height: 40px; font-size: .92rem; border-radius: 8px; }
       .hand.large { gap: 7px; }
       .hand { gap: 5px; }
@@ -438,6 +460,32 @@
 <body>
   <h1>◈ 象棋麻將 ◈</h1>
   <div class="loading" id="loading-msg">連線中…</div>
+
+  <!-- 左上角固定工具選單 -->
+  <div class="toolbar-wrapper">
+    <button class="icon-btn" onclick="toggleToolbar()" title="工具選單" style="padding:6px 12px">
+      <span style="font-size:1.2rem">☰</span>
+    </button>
+    <div class="toolbar-menu" id="toolbar-menu">
+      <button class="toolbar-item" onclick="showScores();closeToolbar()">
+        <span class="toolbar-item-icon">📊</span>查看積分
+      </button>
+      <div class="toolbar-divider"></div>
+      <button class="toolbar-item" onclick="location.reload()">
+        <span class="toolbar-item-icon">🔄</span>重新整理
+      </button>
+    </div>
+  </div>
+
+  <!-- 積分彈窗 -->
+  <div class="score-modal-overlay" id="score-modal" onclick="closeScoreModal()">
+    <div class="score-modal" onclick="event.stopPropagation()">
+      <div style="font-size:1.8rem;margin-bottom:6px">📊</div>
+      <h3 style="color:#ffd700;margin-bottom:16px;letter-spacing:3px;font-size:1.1rem">當前積分</h3>
+      <div id="score-modal-content" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px"></div>
+      <button class="btn" onclick="closeScoreModal()">關閉</button>
+    </div>
+  </div>
 
   <!-- ── 大廳 ── -->
   <div id="lobby-screen">
@@ -478,15 +526,8 @@
   <!-- ── 遊戲 ── -->
   <div id="game-screen">
     <div class="game-info">
-      <div style="flex:1"></div>
-      <div class="game-info-center">
-        <div id="turn-info">—</div>
-        <div id="deck-count">牌堆：32 張</div>
-      </div>
-      <div style="flex:1;display:flex;justify-content:flex-end">
-        <button class="score-btn" id="score-btn">▸ 積分</button>
-      </div>
-      <div class="score-popup" id="score-popup" style="display:none"></div>
+      <div id="turn-info">—</div>
+      <div id="deck-count">牌堆：32 張</div>
     </div>
 
     <!-- 1. 自己的手牌 -->
@@ -583,6 +624,7 @@
     }
     function checkWin(hand) {
       if(hand.length!==5) return{win:false};
+      const withBonus = r => ({...r, allSameColor: hand.every(p => p.color === hand[0].color)});
       const trios=[
         {color:'red',  types:['帥','仕','相'],label:'紅帥+仕+相'},
         {color:'black',types:['將','士','象'],label:'黑將+士+象'},
@@ -594,51 +636,60 @@
         if(trio.some(p=>!p))continue;
         const ids=new Set(trio.map(p=>p.id));
         const rest=hand.filter(p=>!ids.has(p.id));
-        if(isPair(rest))return{win:true,pattern:`${label} + 對子（${rest[0].type}）`};
+        if(isPair(rest))return withBonus({win:true,pattern:`${label} + 對子（${rest[0].type}）`});
       }
       for(const[type,color,label]of[['卒','black','黑卒'],['兵','red','紅兵']]){
         const pawns=hand.filter(p=>p.type===type&&p.color===color);
-        if(pawns.length===5)return{win:true,pattern:`五${label}`};
+        if(pawns.length===5)return withBonus({win:true,pattern:`五${label}`});
         if(pawns.length>=3){
           for(const trio of combos(pawns,3)){
             const ids=new Set(trio.map(p=>p.id));
             const rest=hand.filter(p=>!ids.has(p.id));
-            if(isPair(rest))return{win:true,pattern:`三${label} + 對子（${rest[0].type}）`};
+            if(isPair(rest))return withBonus({win:true,pattern:`三${label} + 對子（${rest[0].type}）`});
           }
         }
       }
       return{win:false};
     }
 
-    function getWinTai(pattern, isZiMo) {
-      return pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+    function getWinTai(pattern, isZiMo, allSameColor) {
+      let tai = pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+      if (allSameColor) tai += 1;
+      return tai;
     }
 
-    let scorePanelOpen = false;
-
-    function renderScorePopup() {
-      const popup = document.getElementById('score-popup');
-      if (!roomData || !scorePanelOpen) { popup.style.display = 'none'; return; }
-      const players = toArr(roomData.players);
-      const scores  = toArr(roomData.scores || []);
-      popup.innerHTML = `<h4>累積積分</h4>` + players.map((p, i) => {
-        const sc  = scores[i] ?? 0;
-        const cls = sc > 0 ? 'pos' : sc < 0 ? 'neg' : 'zero';
-        const str = sc > 0 ? `+${sc}` : String(sc);
-        return `<div class="score-popup-row">
-          <span class="player-avatar avatar-${i}" style="width:24px;height:24px;font-size:.7rem">${p.name.charAt(0)}</span>
-          <span class="score-popup-name">${p.name}${p.uid===myUid?' <span style="font-size:.7rem;color:#4ade80">你</span>':''}</span>
-          <span class="score-popup-val ${cls}">${str}台</span>
-        </div>`;
-      }).join('');
-      popup.style.display = 'block';
+    function toggleToolbar() {
+      document.getElementById('toolbar-menu').classList.toggle('open');
     }
+    function closeToolbar() {
+      document.getElementById('toolbar-menu').classList.remove('open');
+    }
+    document.addEventListener('click', e => {
+      const wrapper = document.querySelector('.toolbar-wrapper');
+      if (wrapper && !wrapper.contains(e.target)) closeToolbar();
+    });
 
-    function toggleScorePanel() {
-      scorePanelOpen = !scorePanelOpen;
-      const btn = document.getElementById('score-btn');
-      btn.textContent = scorePanelOpen ? '▾ 積分' : '▸ 積分';
-      renderScorePopup();
+    function showScores() {
+      const content = document.getElementById('score-modal-content');
+      if (!roomData) {
+        content.innerHTML = '<div style="grid-column:1/-1;color:#888;padding:12px">尚未開始遊戲</div>';
+      } else {
+        const players = toArr(roomData.players);
+        const scores  = toArr(roomData.scores || []);
+        content.innerHTML = players.map((p, i) => {
+          const sc = scores[i] ?? 0;
+          const cls = sc > 0 ? 'positive' : sc < 0 ? 'negative' : 'neutral';
+          return `<div class="score-item ${cls}">
+            <span class="score-name">${p.name}${p.uid === myUid ? ' (你)' : ''}</span>
+            <span class="score-delta">${sc >= 0 ? '+' : ''}${sc}</span>
+            <span class="score-total">台</span>
+          </div>`;
+        }).join('');
+      }
+      document.getElementById('score-modal').classList.add('show');
+    }
+    function closeScoreModal() {
+      document.getElementById('score-modal').classList.remove('show');
     }
 
     // ── 工具 ──
@@ -844,12 +895,12 @@
       if (result.win) {
         const scores = toArr(roomData.scores || []);
         while (scores.length < players.length) scores.push(0);
-        const tai = getWinTai(result.pattern, true);
+        const tai = getWinTai(result.pattern, true, result.allSameColor);
         const changes = players.map((_, i) => i === myIndex ? tai * (players.length - 1) : -tai);
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
         log = pushLog(log, `「${players[myIndex].name}」自摸胡牌！${result.pattern}（${tai}台）`);
         upd[`rooms/${myRoomId}/phase`]   = 'idle';
-        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '自摸', tai, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`]  = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, allSameColor: result.allSameColor, winType: '自摸', tai, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`]       = 'discard';
         upd[`rooms/${myRoomId}/drawnPieceId`]= piece.id;
@@ -892,7 +943,8 @@
         upd[`rooms/${myRoomId}/players/${winner.idx}/handCount`] = winner.hand.length;
         const scores = toArr(roomData.scores || []);
         while (scores.length < n) scores.push(0);
-        const tai = getWinTai(winner.pattern, false);
+        const winRes = checkWin(winner.hand);
+        const tai = getWinTai(winner.pattern, false, winRes.allSameColor);
         const changes = Array(n).fill(0);
         changes[winner.idx] = tai;
         changes[myIndex]    = -tai;
@@ -901,7 +953,7 @@
         upd[`rooms/${myRoomId}/phase`]             = 'idle';
         upd[`rooms/${myRoomId}/lastDiscard`]       = null;
         upd[`rooms/${myRoomId}/lastDiscardPlayer`] = -1;
-        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, winType: '放砲', tai, discardPlayer: myIndex, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`]            = { playerIndex: winner.idx, playerName: winner.name, pattern: winner.pattern, allSameColor: winRes.allSameColor, winType: '放砲', tai, discardPlayer: myIndex, scoreChanges: changes };
       } else {
         const next = (myIndex + 1) % n;
         upd[`rooms/${myRoomId}/phase`]             = 'can-eat';
@@ -936,14 +988,14 @@
       if (result.win) {
         const scores = toArr(roomData.scores || []);
         while (scores.length < players.length) scores.push(0);
-        const tai = getWinTai(result.pattern, false);
+        const tai = getWinTai(result.pattern, false, result.allSameColor);
         const changes = Array(players.length).fill(0);
         changes[myIndex] = tai;
         changes[fromIdx] = -tai;
         upd[`rooms/${myRoomId}/scores`] = scores.map((s, i) => s + changes[i]);
         log = pushLog(log, `「${players[myIndex].name}」吃牌後胡牌！${result.pattern}（${tai}台）`);
         upd[`rooms/${myRoomId}/phase`]  = 'idle';
-        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, winType: '吃牌胡', tai, sourcePlayer: fromIdx, scoreChanges: changes };
+        upd[`rooms/${myRoomId}/winner`] = { playerIndex: myIndex, playerName: players[myIndex].name, pattern: result.pattern, allSameColor: result.allSameColor, winType: '吃牌胡', tai, sourcePlayer: fromIdx, scoreChanges: changes };
       } else {
         upd[`rooms/${myRoomId}/phase`] = 'discard';
       }
@@ -1026,14 +1078,16 @@
       // 胡牌／平局 Modal
       if (roomData.winner) {
         const w = roomData.winner;
+        const patternLabel = w.pattern + (w.allSameColor ? ' ＋清一色' : '');
         document.getElementById('win-crown').textContent = '👑';
         document.getElementById('win-title').textContent = '胡牌！';
         document.getElementById('win-msg').textContent =
-          w.playerIndex === myIndex ? `你以「${w.pattern}」胡牌！` : `「${w.playerName}」以「${w.pattern}」胡牌！`;
-        // 勝利類型 + 台數
+          w.playerIndex === myIndex ? `你以「${patternLabel}」胡牌！` : `「${w.playerName}」以「${patternLabel}」胡牌！`;
         const typeBadge = document.getElementById('win-type-badge');
-        if (w.winType) { typeBadge.textContent = `${w.winType}｜${w.tai ?? '?'}台`; typeBadge.style.display = 'inline-block'; }
-        else { typeBadge.style.display = 'none'; }
+        if (w.winType) {
+          typeBadge.textContent = `${w.winType}｜${w.tai ?? '?'}台` + (w.allSameColor ? '（同色+1）' : '');
+          typeBadge.style.display = 'inline-block';
+        } else { typeBadge.style.display = 'none'; }
         // 得分明細
         const scores = toArr(roomData.scores || []);
         const summaryEl = document.getElementById('win-score-summary');
@@ -1069,7 +1123,6 @@
       renderPlayers();
       renderDiscards();
       renderLog();
-      renderScorePopup();
     }
 
     let showOthers = false;
@@ -1171,13 +1224,25 @@
       const rows = document.getElementById('discard-rows');
       rows.innerHTML = '';
       const canEatNow = roomData.phase === 'can-eat' && myIndex === roomData.currentPlayer;
-      toArr(roomData.players).forEach((player, i) => {
+      const players = toArr(roomData.players);
+      const n = players.length;
+      // 上家優先：(myIndex-1+n)%n, myIndex, (myIndex+1)%n, ...
+      const displayOrder = n > 1
+        ? Array.from({length: n}, (_, k) => ((myIndex - 1 + k + n) % n))
+        : [0];
+
+      displayOrder.forEach(i => {
+        const player = players[i];
+        if (!player) return;
+        const isShangJia = i === ((myIndex - 1 + n) % n) && n > 1;
         const row = document.createElement('div');
         row.className = 'discard-row';
 
         const label = document.createElement('span');
         label.className = `discard-label discard-label-${i}`;
-        label.textContent = player.name;
+        label.innerHTML = player.name + (isShangJia
+          ? ' <span style="background:rgba(251,146,60,.25);color:#fb923c;border:1px solid rgba(251,146,60,.4);border-radius:4px;font-size:.6rem;padding:1px 5px;margin-left:3px">上家</span>'
+          : '');
         row.appendChild(label);
 
         const piecesDiv = document.createElement('div');
@@ -1221,14 +1286,6 @@
     document.getElementById('draw-btn').onclick    = drawCard;
     document.getElementById('eat-btn').onclick     = eatCard;
     document.getElementById('new-game-btn').onclick= startGame;
-    document.getElementById('score-btn').onclick   = e => { e.stopPropagation(); toggleScorePanel(); };
-    document.addEventListener('click', e => {
-      if (scorePanelOpen && !document.getElementById('score-popup').contains(e.target)) {
-        scorePanelOpen = false;
-        document.getElementById('score-btn').textContent = '▸ 積分';
-        document.getElementById('score-popup').style.display = 'none';
-      }
-    });
 
     document.getElementById('display-room-code').onclick = () => {
       if (!myRoomId) return;
