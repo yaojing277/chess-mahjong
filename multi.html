@@ -721,6 +721,12 @@
       document.getElementById('score-modal').classList.remove('show');
     }
 
+    // expose module-scoped functions to global scope for HTML onclick attributes
+    window.toggleToolbar    = toggleToolbar;
+    window.closeToolbar     = closeToolbar;
+    window.showScores       = showScores;
+    window.closeScoreModal  = closeScoreModal;
+
     let scorePanelOpen = false;
 
     function renderScorePopup() {
