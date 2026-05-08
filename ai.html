@@ -938,7 +938,7 @@
       for (let i = 0; i < 4; i++) scores[i] += changes[i];
 
       const patternLabel = result.pattern + (result.allSameColor ? ' ＋清一色' : '');
-      const taiLabel     = `${winType}｜${tai}台` + (result.allSameColor ? '（含清一色 +1）' : '');
+      const taiLabel     = `${winType}｜${tai}台` + (result.allSameColor ? '（同色+1）' : '');
       document.getElementById('win-crown').textContent    = player.isAI ? '🤖' : '👑';
       document.getElementById('win-title').textContent    = player.isAI ? 'AI 胡牌！' : '你胡牌了！';
       document.getElementById('win-msg').textContent      = `${player.name} 以「${patternLabel}」胡牌！`;
