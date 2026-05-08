@@ -505,6 +505,7 @@
 
     function checkWin(hand) {
       if (hand.length !== 5) return {win:false};
+      const withBonus = r => ({...r, allSameColor: hand.every(p => p.color === hand[0].color)});
       const trios = [
         {color:'red',   types:['帥','仕','相'], label:'紅帥+仕+相'},
         {color:'black', types:['將','士','象'], label:'黑將+士+象'},
@@ -516,16 +517,16 @@
         if (trio.some(p=>!p)) continue;
         const ids  = new Set(trio.map(p=>p.id));
         const rest = hand.filter(p=>!ids.has(p.id));
-        if (isPair(rest)) return {win:true, pattern:`${label} + 對子（${rest[0].type}）`};
+        if (isPair(rest)) return withBonus({win:true, pattern:`${label} + 對子（${rest[0].type}）`});
       }
       for (const [type,color,label] of [['卒','black','黑卒'],['兵','red','紅兵']]) {
         const pawns = hand.filter(p=>p.type===type && p.color===color);
-        if (pawns.length===5) return {win:true, pattern:`五${label}`};
+        if (pawns.length===5) return withBonus({win:true, pattern:`五${label}`});
         if (pawns.length>=3) {
           for (const trio of combos(pawns,3)) {
             const ids  = new Set(trio.map(p=>p.id));
             const rest = hand.filter(p=>!ids.has(p.id));
-            if (isPair(rest)) return {win:true, pattern:`三${label} + 對子（${rest[0].type}）`};
+            if (isPair(rest)) return withBonus({win:true, pattern:`三${label} + 對子（${rest[0].type}）`});
           }
         }
       }
@@ -568,8 +569,10 @@
     // ── 計分 ──────────────────────────────────────────────
     let scores = [0, 0, 0, 0];
 
-    function getWinTai(pattern, isZiMo) {
-      return pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+    function getWinTai(pattern, isZiMo, allSameColor) {
+      let tai = pattern.startsWith('五') ? (isZiMo ? 10 : 6) : (isZiMo ? 2 : 1);
+      if (allSameColor) tai += 1;
+      return tai;
     }
 
     function scoreBadge(i) {
@@ -665,7 +668,7 @@
         addLog(`${player.name} 自摸胡牌！${result.pattern}`);
         state.phase = 'idle';
         render();
-        showWin(player, result.pattern, '自摸', -1);
+        showWin(player, result, '自摸', -1);
       } else {
         if (!player.isAI) setStatus('請點擊手牌打出一張');
         render();
@@ -693,7 +696,7 @@
           addLog(`${cp.name} 放砲胡牌！${result.pattern}`);
           state.phase = 'idle';
           render();
-          showWin(cp, result.pattern, '放砲', playerId);
+          showWin(cp, result, '放砲', playerId);
           return;
         }
       }
@@ -726,7 +729,7 @@
         addLog(`${player.name} 胡牌！${result.pattern}`);
         state.phase = 'idle';
         render();
-        showWin(player, result.pattern, '吃牌胡', sourceIdx);
+        showWin(player, result, '吃牌胡', sourceIdx);
       } else {
         if (!player.isAI) setStatus('吃牌後請打出一張');
         render();
@@ -921,8 +924,8 @@
       document.getElementById('win-overlay').classList.add('show');
     }
 
-    function showWin(player, pattern, winType, discardOrSourceIdx) {
-      const tai = getWinTai(pattern, winType === '自摸');
+    function showWin(player, result, winType, discardOrSourceIdx) {
+      const tai = getWinTai(result.pattern, winType === '自摸', result.allSameColor);
       const changes = [0, 0, 0, 0];
 
       if (winType === '自摸') {
@@ -934,10 +937,12 @@
       }
       for (let i = 0; i < 4; i++) scores[i] += changes[i];
 
+      const patternLabel = result.pattern + (result.allSameColor ? ' ＋清一色' : '');
+      const taiLabel     = `${winType}｜${tai}台` + (result.allSameColor ? '（含清一色 +1）' : '');
       document.getElementById('win-crown').textContent    = player.isAI ? '🤖' : '👑';
       document.getElementById('win-title').textContent    = player.isAI ? 'AI 胡牌！' : '你胡牌了！';
-      document.getElementById('win-msg').textContent      = `${player.name} 以「${pattern}」胡牌！`;
-      document.getElementById('win-type-badge').textContent = `${winType}｜${tai}台`;
+      document.getElementById('win-msg').textContent      = `${player.name} 以「${patternLabel}」胡牌！`;
+      document.getElementById('win-type-badge').textContent = taiLabel;
 
       document.getElementById('win-score-summary').innerHTML =
         state.players.map((p, i) => {
