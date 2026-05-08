@@ -505,7 +505,14 @@
 
     function checkWin(hand) {
       if (hand.length !== 5) return {win:false};
-      const withBonus = r => ({...r, allSameColor: hand.every(p => p.color === hand[0].color)});
+      const withBonus = r => {
+        const allSame = hand.every(p => p.color === hand[0].color);
+        // 帥+將 對子例外：此對視為同色，剩餘3張同色即可觸發同色+1
+        const triple = hand.filter(p => p.type !== '帥' && p.type !== '將');
+        const hasKingPair = hand.some(p => p.type==='帥') && hand.some(p => p.type==='將') && triple.length===3;
+        const kingPairBonus = hasKingPair && triple.every(p => p.color === triple[0].color);
+        return {...r, allSameColor: allSame || kingPairBonus};
+      };
       const trios = [
         {color:'red',   types:['帥','仕','相'], label:'紅帥+仕+相'},
         {color:'black', types:['將','士','象'], label:'黑將+士+象'},
