@@ -489,27 +489,27 @@
 
   <!-- 左上角固定工具選單 -->
   <div class="toolbar-wrapper">
-    <button class="icon-btn" onclick="toggleToolbar()" title="工具選單" style="padding:6px 12px">
+    <button class="icon-btn" id="toolbar-toggle-btn" title="工具選單" style="padding:6px 12px">
       <span style="font-size:1.2rem">☰</span>
     </button>
     <div class="toolbar-menu" id="toolbar-menu">
-      <button class="toolbar-item" onclick="showScores();closeToolbar()">
+      <button class="toolbar-item" id="toolbar-scores-btn">
         <span class="toolbar-item-icon">📊</span>查看積分
       </button>
       <div class="toolbar-divider"></div>
-      <button class="toolbar-item" onclick="location.reload()">
+      <button class="toolbar-item" id="toolbar-reload-btn">
         <span class="toolbar-item-icon">🔄</span>重新整理
       </button>
     </div>
   </div>
 
   <!-- 積分彈窗 -->
-  <div class="score-modal-overlay" id="score-modal" onclick="closeScoreModal()">
-    <div class="score-modal" onclick="event.stopPropagation()">
+  <div class="score-modal-overlay" id="score-modal">
+    <div class="score-modal" id="score-modal-inner">
       <div style="font-size:1.8rem;margin-bottom:6px">📊</div>
       <h3 style="color:#ffd700;margin-bottom:16px;letter-spacing:3px;font-size:1.1rem">當前積分</h3>
       <div id="score-modal-content" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px"></div>
-      <button class="btn" onclick="closeScoreModal()">關閉</button>
+      <button class="btn" id="score-modal-close-btn">關閉</button>
     </div>
   </div>
 
@@ -721,11 +721,13 @@
       document.getElementById('score-modal').classList.remove('show');
     }
 
-    // expose module-scoped functions to global scope for HTML onclick attributes
-    window.toggleToolbar    = toggleToolbar;
-    window.closeToolbar     = closeToolbar;
-    window.showScores       = showScores;
-    window.closeScoreModal  = closeScoreModal;
+    // bind toolbar & modal events inside module (avoids module-scope vs global-scope issue)
+    document.getElementById('toolbar-toggle-btn').addEventListener('click', toggleToolbar);
+    document.getElementById('toolbar-scores-btn').addEventListener('click', () => { showScores(); closeToolbar(); });
+    document.getElementById('toolbar-reload-btn').addEventListener('click', () => location.reload());
+    document.getElementById('score-modal').addEventListener('click', closeScoreModal);
+    document.getElementById('score-modal-inner').addEventListener('click', e => e.stopPropagation());
+    document.getElementById('score-modal-close-btn').addEventListener('click', closeScoreModal);
 
     let scorePanelOpen = false;
 
